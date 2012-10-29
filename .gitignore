@@ -1,0 +1,10 @@
+build
+.DS_Store
+*.xcodeproj/*.mode*
+*.xcodeproj/*.pbxuser
+*.xcodeproj/*.xcworkspace
+*.xcodeproj/*.xcworkspace/*.*
+*.xcodeproj/xcuserdata
+*.xcodeproj/xcuserdata/*
+*.xcodeproj/*.pbxproj.DS_Store
+*.xcodeproj/*.pbxuser
