@@ -1,6 +1,6 @@
 BTAudioQPlayer
 =====
-部分核心代码来自AudioStreamer项目(https://github.com/freeme/AudioStreamer.git)
+部分核心代码来自DigitalDJ/AudioStreamer项目(git://github.com/DigitalDJ/AudioStreamer.git)
 
 AudioStreamer存在的问题 
 =====
