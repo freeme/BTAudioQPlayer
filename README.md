@@ -1,5 +1,8 @@
+BTAudioQPlayer
+=====
+部分核心代码来自AudioStreamer项目(https://github.com/freeme/AudioStreamer.git)
 
-AudioStreamer存在的问题 ![](https://github.com/freeme/AudioStreamer.git)
+AudioStreamer存在的问题 
 =====
 1. 代码结构完全过程化
 2. 播放状态变量太多，状态之间不容易区分，不易理解和调试。
