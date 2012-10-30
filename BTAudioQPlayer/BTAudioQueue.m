@@ -222,6 +222,10 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
   
 	OSStatus status = AudioQueueStart(_audioQueue, NULL);
   VERIFY_STATUS(status);
+  if (_delegate && [_delegate respondsToSelector:@selector(audioQueuePlaybackIsStarting:)]) {
+    [_delegate audioQueuePlaybackIsStarting:self];
+  }
+  
   return status;
 }
 
@@ -244,11 +248,12 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
 
 - (OSStatus)stop {
   CDLog(BTDFLAG_AUDIO_QUEUE, @" >>>>>>>>>> stop");
-  _queueStatus = BTAudioQueueStatusStopped;
+  
   OSStatus status = AudioQueueReset(_audioQueue);
   VERIFY_STATUS(status);
-  status = AudioQueueStop(_audioQueue, false);
+  status = AudioQueueStop(_audioQueue, true);
   VERIFY_STATUS(status);
+  _queueStatus = BTAudioQueueStatusStopped;
   return status;
 }
 
@@ -390,7 +395,7 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
       CDLog(BTDFLAG_AUDIO_QUEUE,@"[outNumberOfFramesPrepared = %ld", outNumberOfFramesPrepared);
       [self start];
     }
-    [_delegate audioQueueIsFull:self];
+  
   }
   
 	// wait until next buffer is not in use

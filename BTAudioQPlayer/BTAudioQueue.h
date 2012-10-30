@@ -20,10 +20,10 @@
 
 typedef NS_ENUM(NSInteger, BTAudioQueueStatus) {
 	BTAudioQueueStatusInitialized,
-  BTAudioQueueStatusStarting,
+  BTAudioQueueStatusStarting, //这个时候Queue还没有播放出声音
   BTAudioQueueStatusStarted,
   BTAudioQueueStatusPaused,
-  BTAudioQueueStatusStopping,
+  BTAudioQueueStatusStopping, //这个时候Queue中还有Buffer没有播放完
   BTAudioQueueStatusStopped,
 } ;
 
@@ -121,5 +121,5 @@ typedef NS_ENUM(NSInteger, BTAudioQueueStatus) {
  */
 - (void)audioQueuePlaybackIsComplete:(BTAudioQueue *)audioQueue;
 
-- (void)audioQueueIsFull:(BTAudioQueue *)audioQueue;
+//- (void)audioQueueIsFull:(BTAudioQueue *)audioQueue;
 @end

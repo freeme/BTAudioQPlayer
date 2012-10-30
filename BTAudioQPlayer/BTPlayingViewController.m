@@ -150,6 +150,7 @@ static BTPlayingViewController *instance;
   if (_player) {
     [_player stop];
     [_player release];
+    CDLog(BTDFLAG_AUDIO_PLAYER, @"AFTER [_player release]");
     _player = nil;
   }
   

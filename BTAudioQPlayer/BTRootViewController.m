@@ -30,19 +30,19 @@
     //[self.tableView registerClass:[UITableViewCell class] forCellReuseIdentifier:@"Cell"];
     // Custom initialization
     _musicList = [[NSMutableArray alloc] initWithCapacity:16];
-    [self addTestMusicWithTitle:@"套马杆 dj" link:@"http://www.zltsz.com/video/%CE%DA%C0%BC%CD%D0%E6%AB-%CC%D7%C2%ED%B8%CB(DJ).mp3"];
     
+    [self addTestMusicWithTitle:@"老婆最大" link:@"http://www.ycsky100.com/blog/Qq1274076003/upload/2011112410110590.mp3"];
+    NSURL *url = [[NSBundle mainBundle] URLForResource:@"lpzd" withExtension:@"mp3"];
+    [self addTestMusicWithTitle:@"老婆最大(本地资源)" link:[url absoluteString]];
+    [self addTestMusicWithTitle:@"伤不起" link:@"http://mul1.tximg.cn/music/group/bbs/mp3/13/110830/1314711786255.mp3"];
+    [self addTestMusicWithTitle:@"序曲" link:@"http://www.mglmusic.com/geqv/zuhegeqv/fenghuangchuanqi/01.mp3"];
+    [self addTestMusicWithTitle:@"等一分钟" link:@"http://xkpt.txsyxx.com/uploadresource/netstudyresource/2011920130152.mp3"];
+    [self addTestMusicWithTitle:@"套马杆 dj" link:@"http://www.zltsz.com/video/%CE%DA%C0%BC%CD%D0%E6%AB-%CC%D7%C2%ED%B8%CB(DJ).mp3"];
     [self addTestMusicWithTitle:@"郎的诱惑" link:@"http://wenhua.youth.cn/yis/yy/201003/W020100323428725798476.mp3"];
     
     [self addTestMusicWithTitle:@"月亮之上" link:@"http://bu.xmanyao.info/COFFdD0xMzQ3OTQ0OTY2Jmk9MTI0LjkzLjIyMy4xMTQmdT1Tb25ncy92Mi9mYWludFFDL2Q4LzJjLzUxYjJiYmMzZWZiMWNhYWIzZWU3M2ZiYmU1NzkyY2Q4Lm1wMyZtPTY1MzVkNWI3ZWM5MGU5MDdkNTkxM2FlNmE2NmQ5MTU2JnY9bGlzdGVuJm491MLBwdauyc8mcz2377vLtKvG5iZwPW4=.mp3"];
     
     [self addTestMusicWithTitle:@"自由飞翔" link:@"http://data1.act.qq.com/20071025/17/119330398213504.mp3"];
-    
-    [self addTestMusicWithTitle:@"老婆最大" link:@"http://www.ycsky100.com/blog/Qq1274076003/upload/2011112410110590.mp3"];
-    
-    [self addTestMusicWithTitle:@"伤不起" link:@"http://mul1.tximg.cn/music/group/bbs/mp3/13/110830/1314711786255.mp3"];
-    [self addTestMusicWithTitle:@"序曲" link:@"http://www.mglmusic.com/geqv/zuhegeqv/fenghuangchuanqi/01.mp3"];
-    [self addTestMusicWithTitle:@"等一分钟" link:@"http://xkpt.txsyxx.com/uploadresource/netstudyresource/2011920130152.mp3"];
   }
   return self;
 }

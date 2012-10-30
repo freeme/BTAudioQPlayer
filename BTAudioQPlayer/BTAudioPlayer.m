@@ -59,14 +59,13 @@ void RunLoopSourcePerformRoutine (void *info) {
   [_fileStream open];
   _playStatus = BTAudioPlayerStatusStop;
   
-  BOOL isRun = YES;
-  
-  
-  while (isRun && ![_thread isCancelled]) {
+  while (_thread && ![_thread isCancelled]) {
 
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     @try {
+      CDLog(BTDFLAG_AUDIO_PLAYER, @"Before CFRunLoopRun %d %d",[_thread isCancelled],_thread);
       CFRunLoopRun();
+      CDLog(BTDFLAG_AUDIO_PLAYER, @"AFter CFRunLoopRun %d %d", [_thread isCancelled],_thread);
     }@catch (NSException *exception) {
       
     }@finally {
@@ -75,7 +74,7 @@ void RunLoopSourcePerformRoutine (void *info) {
     [pool drain];
   }
 
-
+  CDLog(BTDFLAG_AUDIO_PLAYER, @"Thread Exit!------");
   
 }
 
@@ -143,7 +142,7 @@ void RunLoopSourcePerformRoutine (void *info) {
 }
 
 - (void)audioRequest:(BTAudioRequest *)request downloadProgress:(float)progress {
-  CVLog(BTDFLAG_NETWORK,@"progress = %.2f", progress);
+  CVLog(BTDFLAG_NETWORK ,@"progress = %.2f", progress);
   if (_delegate && [_delegate respondsToSelector:@selector(audioPlayer:downloadProgress:)]) {
     dispatch_async(dispatch_get_main_queue(), ^{
       [_delegate audioPlayer:self downloadProgress:progress];
@@ -205,6 +204,10 @@ void RunLoopSourcePerformRoutine (void *info) {
 - (void)audioQueuePlaybackIsStarting:(BTAudioQueue *)audioQueue {
   CDLog(BTDFLAG_AUDIO_QUEUE, @"");
   self.status = BTAudioPlayerStatusPlaying;
+  if (self.status == BTAudioPlayerStatusWaiting ||self.status == BTAudioPlayerStatusStop  ) {
+    //[_audioQueue start];
+    self.status = BTAudioPlayerStatusPlaying;
+  }
 }
 //Callback from AQClient thread
 - (void)audioQueuePlaybackIsComplete:(BTAudioQueue *)audioQueue {
@@ -216,13 +219,13 @@ void RunLoopSourcePerformRoutine (void *info) {
   _audioQueue = nil;
 }
 
-- (void)audioQueueIsFull:(BTAudioQueue *)audioQueue {
-  CDLog(BTDFLAG_AUDIO_QUEUE, @"--");
-  if (self.status == BTAudioPlayerStatusWaiting) {
-    //[_audioQueue start];
-    self.status = BTAudioPlayerStatusPlaying;
-  }
-}
+//- (void)audioQueueIsFull:(BTAudioQueue *)audioQueue {
+//  CDLog(BTDFLAG_AUDIO_QUEUE, @"--");
+//  if (self.status == BTAudioPlayerStatusWaiting) {
+//    //[_audioQueue start];
+//    self.status = BTAudioPlayerStatusPlaying;
+//  }
+//}
 #pragma mark -
 #pragma mark Drive Data
 
@@ -231,7 +234,9 @@ void RunLoopSourcePerformRoutine (void *info) {
   if ([_audioQueue isFull]||_fileStream.fileLength == 0||[_thread isCancelled]) {
     return;
   }
-  int kAQWriteDataSzie = kAQDefaultBufSize * 4;
+  //TODO: 后续优化解决办法
+  //改为kAQDefaultBufSize * 16，暂时解决播放本地文件无法启动播放的问题
+  int kAQWriteDataSzie = kAQDefaultBufSize * 16;
   UInt8 bytes[kAQWriteDataSzie];
   CFIndex readLength = 0;
   //
@@ -305,11 +310,10 @@ void RunLoopSourcePerformRoutine (void *info) {
 }
 
 - (void)stop {
-  
+  CDLog(BTDFLAG_AUDIO_PLAYER,@">>>>>>>>>>stop");
   //TODO: waitUntilDone:YES just for test
-  [self performSelector:@selector(cancel) onThread:_thread withObject:nil waitUntilDone:YES];
-  
   [_thread cancel];
+  [self performSelector:@selector(cancel) onThread:_thread withObject:nil waitUntilDone:YES];
   [_thread release];
   _thread = nil;
 }
@@ -325,12 +329,20 @@ void RunLoopSourcePerformRoutine (void *info) {
 	}
 
 	if (paused) {
-    self.Status = BTAudioPlayerStatusPaused;
-		[_audioQueue pause];
+    [self pauseQueue];
 	} else {
-    self.Status = BTAudioPlayerStatusPlaying;
-		[_audioQueue start];
+    [self startQueue];
 	}
+}
+
+- (void)startQueue {
+  [_audioQueue start];
+  self.Status = BTAudioPlayerStatusPlaying;
+}
+
+- (void)pauseQueue {
+  [_audioQueue pause];
+  self.Status = BTAudioPlayerStatusPaused;
 }
 
 - (void)setStatus:(BTAudioPlayerStatus)status {
@@ -372,6 +384,7 @@ void RunLoopSourcePerformRoutine (void *info) {
 - (void)cancel {
   CDLog(BTDFLAG_AUDIO_PLAYER,@">>>>>>>>>>cancel");
   
+  
   _request.delegate = nil;
   [_request cancel];
 	[_request release];
@@ -392,9 +405,15 @@ void RunLoopSourcePerformRoutine (void *info) {
   [_url release];
   _url = nil;
   
-  CFRunLoopRemoveSource(_runLoop, _runLoopSource, kCFRunLoopDefaultMode);
-  CFRelease(_runLoopSource);
-  
+  CDLog(BTDFLAG_AUDIO_PLAYER, @"_runLoop:%d, _runLoopSource:%d", _runLoop, _runLoopSource);
+  if (_runLoop) {
+    CFRunLoopRemoveSource(_runLoop, _runLoopSource, kCFRunLoopDefaultMode);
+    CFRelease(_runLoopSource);
+    _runLoopSource = NULL;
+    CFRunLoopStop(_runLoop);
+    _runLoop = NULL;
+  }
+
 
   
 
@@ -405,12 +424,15 @@ void RunLoopSourcePerformRoutine (void *info) {
 }
 
 - (float)playProgress {
-
+  float progress = -1;
+  if (self.status == BTAudioPlayerStatusStop) {
+    return progress;
+  }
   AudioTimeStamp queueTime;
   Boolean discontinuity;
   
   OSStatus status = [_audioQueue getCurrentTime:&queueTime discontinuity:&discontinuity];
-  float progress = -1;
+  
   const OSStatus AudioQueueStopped = 0x73746F70; // 0x73746F70 is 'stop'
   if (status == AudioQueueStopped) {
     CVLog(BTDFLAG_AUDIO_PLAYER, @"AudioQueueStopped");
