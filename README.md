@@ -1,6 +1,6 @@
 BTAudioQPlayer
 =====
-部分核心代码来自DigitalDJ/AudioStreamer项目(git://github.com/DigitalDJ/AudioStreamer.git)
+部分核心代码来自[DigitalDJ/AudioStreamer](git://github.com/DigitalDJ/AudioStreamer.git)
 
 AudioStreamer存在的问题 
 =====
@@ -25,11 +25,14 @@ AudioStreamer存在的问题
 关于状态
 =====
 使用状态变量的时候应该注意，避免各状态所表述的内容有交叉，比如AS_STOPPING和AS_PLAYING，AS_STOPPING也是种播放ing的状态。AS_STARTING_FILE_THREAD其实也AS_WAITING_FOR_DATA这样的状态设置将导致后续难以维护  
-单纯从播放器的角度来看待状态，只需要有以下几种，（或者从用户可见（UI）的状态来看）,其他的内部状态不需要让用户知道  
+单纯从播放器的角度来看待状态，只需要有以下几种，（或者从用户可见（UI）的状态来看）,其他的内部状态不需要让用户知道
+
 * stop: 初始和最终，都应该是这个状态。也有可能是因为某种错误而导致进入这个状态  
 * playing: 播放中，无需多解释  
 * paused: 暂停，这个只代表用户行为的暂停。当然播放器在播放的过程中，还有因为不能正常播放而显示出类似“暂停”的状态，统一归为waiting  
 * waiting: 进入这个状态有很多原因。一个主要的原因就是等待数据。  
+
+
 状态与行为的一致性：将状态的改变与对象行为绑定在一起，避免出现状态不能表示当前行为的情况。  
 比如暂停操作：可以有两个实现  
 * 方法一：（用户）行为触发  
