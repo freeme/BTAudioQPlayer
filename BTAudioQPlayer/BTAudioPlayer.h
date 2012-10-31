@@ -7,7 +7,7 @@
 #import "BTAudioRequest.h"
 #import "BTAudioFileStream.h"
 #import "BTAudioQueue.h"
-
+#import "BTPlayerItem.h"
 
 #define kAQDefaultBufSize 2048	// Number of bytes in each audio queue buffer
 // Needs to be big enough to hold a packet of
@@ -117,7 +117,7 @@ typedef NS_ENUM(NSInteger, BTAudioPlayerStatus) {
   CFRunLoopSourceRef        _runLoopSource;
   CFRunLoopRef              _runLoop;
   
-  
+  BTPlayerItem*             _playerItem;
 //  NSInteger                           seekByteOffset;
 //  double                              seekTime;
 //	BOOL                                seekWasRequested;

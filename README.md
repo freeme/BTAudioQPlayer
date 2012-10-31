@@ -47,7 +47,6 @@ Finish！使用固定的Buffer数量，而不是生成N个
 Finish！改用RunLoopSource驱动  
 Finish！（NSURLConnection本身就支持）支持网络和本地数据  
 Finish！处理正常播放结束  
-暂停时，下载进度正常更新  
 添加使用BTPlayerItem协议的对象  
 支持CBR格式  
 统一数据类型的使用  

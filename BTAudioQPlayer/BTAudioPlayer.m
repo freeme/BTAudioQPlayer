@@ -29,6 +29,9 @@ void RunLoopSourcePerformRoutine (void *info) {
 
 - (void)dealloc {
 	[self cancel];
+  
+  _delegate = nil; 
+  [_playerItem release];
 	[super dealloc];
 }
 
@@ -37,6 +40,7 @@ void RunLoopSourcePerformRoutine (void *info) {
   if (self) {
     _delegate = aDelegate;
     _url = [url retain];
+    _playerItem = [[BTPlayerItem alloc] initWithURL:url];
   }
 	return self;
 }
@@ -44,6 +48,7 @@ void RunLoopSourcePerformRoutine (void *info) {
 - (void)main {
   CDLog(BTDFLAG_DEFAULT,@"");
   _runLoop = CFRunLoopGetCurrent();
+  
   CFRunLoopSourceContext context = {0, self, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &RunLoopSourcePerformRoutine};
   _runLoopSource = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &context);
   CFRunLoopAddSource(_runLoop, _runLoopSource, kCFRunLoopDefaultMode);
@@ -129,16 +134,18 @@ void RunLoopSourcePerformRoutine (void *info) {
   CILog(BTDFLAG_NETWORK, @"statusCode = 200");
   _fileStream.fileLength = contentLength;
   self.status = BTAudioPlayerStatusWaiting;
-
+  _playerItem.expectedContentLength = contentLength;
 }
 
 - (void)audioRequest:(BTAudioRequest *)request didReceiveData:(NSData *)data {
   //CDLog(BTDFLAG_NETWORK, @"data length = %d", [data length]);
+  [_playerItem appendData:data];
   [_cacheData appendData:data];
 //	if ([_fileStream parseBytes:data] != noErr) {
 //		[self error];
 //	}
   [self driveRunLoop];
+  
 }
 
 - (void)audioRequest:(BTAudioRequest *)request downloadProgress:(float)progress {
@@ -172,14 +179,19 @@ void RunLoopSourcePerformRoutine (void *info) {
 
 - (void)audioFileStream:(BTAudioFileStream *)stream isReadyToProducePacketsWithASBD:(AudioStreamBasicDescription)asbd {
   if (_audioQueue == nil) {
-    packetBufferSize = [_fileStream getPacketBufferSize];
-    _audioQueue = [[BTAudioQueue alloc] initWithASBD:asbd packetBufferSize:packetBufferSize];
+    _playerItem.asbd = asbd;
+    _playerItem.packetBufferSize = [_fileStream getPacketBufferSize];
+    _audioQueue = [[BTAudioQueue alloc] initWithASBD:asbd packetBufferSize:_playerItem.packetBufferSize];
     if (_audioQueue == nil) {
       //TODO: 容错处理
       
     } else {
       _audioQueue.delegate = self;
       _discontinuity = YES;
+      _playerItem.discontinuity = YES;
+      _playerItem.bitRate = [_fileStream getBitRate];
+      _playerItem.dataOffset = [_fileStream dataOffset];
+      _playerItem.fileFormat = [_fileStream getFileFormat];
     }
 	}
 }
@@ -396,8 +408,7 @@ void RunLoopSourcePerformRoutine (void *info) {
   _fileStream.delegate = nil;
 	[_fileStream release];
 	_fileStream = nil;
-  
-  _delegate = nil;
+
   
   [_cacheData release];
   _cacheData = nil;
