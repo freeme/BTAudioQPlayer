@@ -52,6 +52,8 @@
 - (id)initWithURL:(NSURL*)URL;
 - (void)appendData:(NSData*)data;
 - (NSUInteger)availableDataLength;
-
-
+//- (BOOL)hasMoreData;
+//- (BOOL)isEnd;
+- (Float64)duration;
+- (void)reset;
 @end

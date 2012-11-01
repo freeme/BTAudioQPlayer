@@ -55,4 +55,53 @@
  return [_cacheData length] - self.byteWriteIndex;
 }
 
+//- (BOOL)hasMoreData {
+//  return (self.byteWriteIndex < self.expectedContentLength);
+//}
+////下载完成，数据也写完了
+//- (BOOL)isEnd {
+//  return (self.byteWriteIndex == self.expectedContentLength);
+//}
+
+- (Float64)duration {
+	float calculatedBitRate = [self calculatedBitRate];
+	
+	if (calculatedBitRate == 0 || self.expectedContentLength == 0) {
+		return 0.0;
+  }
+	
+	return (self.expectedContentLength - self.dataOffset) / (calculatedBitRate * 0.125);
+}
+
+//
+// calculatedBitRate
+//
+// returns the bit rate, if known. Uses packet duration times running bits per
+//   packet if available, otherwise it returns the nominal bitrate. Will return
+//   zero if no useful option available.
+//
+- (Float64)calculatedBitRate {
+  Float64 bitRate = 0.0;
+	if (_isFormatVBR) { //packetDuration = asbd.mFramesPerPacket / asbd.mSampleRate
+		if (_packetDuration && self.processedPacketsCount > 50) {
+			Float64 averagePacketByteSize = (Float64)self.processedPacketsSizeTotal / self.processedPacketsCount;
+      CVLog(BTDFLAG_FILE_STREAM, @"averagePacketByteSize = %.4f",averagePacketByteSize);
+      bitRate = 8.0 * averagePacketByteSize / _packetDuration;
+    } else if (self.bitRate) {
+			bitRate = self.bitRate;
+    }
+  } else {
+		bitRate = 8.0 * _asbd.mSampleRate * _asbd.mBytesPerPacket * _asbd.mFramesPerPacket;
+    self.bitRate = bitRate;
+  }
+  CVLog(BTDFLAG_FILE_STREAM, @"                   bitRate = %.4f",bitRate);
+  CVLog(BTDFLAG_FILE_STREAM, @"           _packetDuration = %.4f",_packetDuration);
+  CVLog(BTDFLAG_FILE_STREAM, @"    _processedPacketsCount = %d",_processedPacketsCount);
+  CVLog(BTDFLAG_FILE_STREAM, @"_processedPacketsSizeTotal = %d",_processedPacketsSizeTotal);
+	return bitRate;
+}
+
+- (void)reset {
+  
+}
 @end
