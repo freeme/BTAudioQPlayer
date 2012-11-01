@@ -10,7 +10,7 @@
 
 @interface BTPlayerItem: NSObject {
   NSMutableData *                 _cacheData;
-//  NSUInteger                      _byteWriteIndex;
+  NSUInteger                      _byteWriteIndex;
 //  NSUInteger                      _packetBufferSize;
 //  NSUInteger                      _expectedContentLength;
 //  
@@ -55,5 +55,6 @@
 //- (BOOL)hasMoreData;
 //- (BOOL)isEnd;
 - (Float64)duration;
+- (Float64)calculatedBitRate;
 - (void)reset;
 @end

@@ -14,6 +14,7 @@
 @synthesize sampleRate = _sampleRate;
 @synthesize packetDuration = _packetDuration;
 @synthesize isFormatVBR = _isFormatVBR;
+@synthesize byteWriteIndex = _byteWriteIndex;
 
 + (BTPlayerItem *)playerItemWithURL:(NSURL *)URL {
   BTPlayerItem *item = [[[BTPlayerItem alloc] initWithURL:URL] autorelease];
@@ -101,7 +102,61 @@
 	return bitRate;
 }
 
+- (NSUInteger) byteWriteIndex {
+  if (self.seekByteOffset) {
+    _byteWriteIndex = self.seekByteOffset;
+    self.seekByteOffset = 0;
+  }
+  return _byteWriteIndex;
+}
+
+//- (void)setSeekTime:(double)newSeekTime {
+//	if ([self calculatedBitRate] == 0.0 || self.expectedContentLength <= 0) {
+//		return;
+//	}
+//	
+//	//
+//	// Calculate the byte offset for seeking
+//	//
+//	self.seekByteOffset = self.dataOffset + (newSeekTime / [self duration]) * (self.expectedContentLength - self.dataOffset);
+//  
+//	//
+//	// Attempt to leave 1 useful packet at the end of the file (although in
+//	// reality, this may still seek too far if the file has a long trailer).
+//	//
+//
+//	if (self.seekByteOffset > self.expectedContentLength - 2 * self.packetBufferSize) {
+//		self.seekByteOffset = self.expectedContentLength - 2 * self.packetBufferSize;
+//	}
+//	
+//	//
+//	// Store the old time from the audio queue and the time that we're seeking
+//	// to so that we'll know the correct time progress after seeking.
+//	//
+//	self.seekTime = newSeekTime;
+//	
+//	//
+//	// Attempt to align the seek with a packet boundary
+//	//
+//	double calculatedBitRate = [self calculatedBitRate];
+//	if (self.packetDuration > 0 && calculatedBitRate > 0) {
+//		UInt32 ioFlags = 0;
+//		SInt64 packetAlignedByteOffset;
+//		SInt64 seekPacket = floor(newSeekTime / _packetDuration);
+//		OSStatus err = AudioFileStreamSeek(_streamID, seekPacket, &packetAlignedByteOffset, &ioFlags);
+//		if (!err && !(ioFlags & kAudioFileStreamSeekFlag_OffsetIsEstimated))
+//		{
+//			_seekTime -= ((_seekByteOffset - _dataOffset) - packetAlignedByteOffset) * 8.0 / calculatedBitRate;
+//			_seekByteOffset = packetAlignedByteOffset + _dataOffset;
+//		}
+//	}
+//}
+
 - (void)reset {
-  
+  self.seekByteOffset = 0;
+  self.seekTime = 0;
+  self.discontinuity = YES;
+//  self.processedPacketsSizeTotal = 0;
+//  self.processedPacketsCount = 0;
 }
 @end

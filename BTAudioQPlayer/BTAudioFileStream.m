@@ -415,5 +415,8 @@ void packetCallback(void *clientData, UInt32 byteCount, UInt32 packetCount, cons
 	//[self openReadStream];
 }
 
-
+- (OSStatus)seekWithPacketOffset:(SInt64)inPacketOffset  outDataByteOffset:(SInt64 *)outDataByteOffset ioFlags:(UInt32 *)ioFlags {
+  OSStatus status = AudioFileStreamSeek(_streamID, inPacketOffset, outDataByteOffset, ioFlags);
+  return status;
+}
 @end

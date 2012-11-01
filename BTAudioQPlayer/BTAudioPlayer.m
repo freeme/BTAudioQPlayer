@@ -22,7 +22,7 @@ void RunLoopSourcePerformRoutine (void *info) {
   if (info != NULL && [(id)info isKindOfClass:[BTAudioPlayer class]]) {
     BTAudioPlayer*  player = (BTAudioPlayer*)info;
     if ([player respondsToSelector:@selector(writeData)]) {
-      [player writeData2];
+      [player writeData];
     }
   }
 }
@@ -54,9 +54,6 @@ void RunLoopSourcePerformRoutine (void *info) {
   CFRunLoopSourceContext context = {0, self, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &RunLoopSourcePerformRoutine};
   _runLoopSource = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &context);
   CFRunLoopAddSource(_runLoop, _runLoopSource, kCFRunLoopDefaultMode);
-  
-  
-  _cacheData = [[NSMutableData dataWithCapacity:0] retain];
 
   _request = [[BTAudioRequest alloc] initRequestWithURL:_url delegate:self];
   [_request start];
@@ -92,8 +89,9 @@ void RunLoopSourcePerformRoutine (void *info) {
 }
 
 - (void)seekToTime:(Float64)newSeekTime {
-  self.status = BTAudioPlayerStatusWaiting;
-  [self performSelector:@selector(internalSeekToTime:) onThread:_thread withObject:[NSNumber numberWithFloat:newSeekTime] waitUntilDone:NO];
+//  [_audioQueue pause];
+//  self.status = BTAudioPlayerStatusWaiting;
+  [self performSelector:@selector(internalSeekToTime:) onThread:_thread withObject:[NSNumber numberWithFloat:newSeekTime] waitUntilDone:YES];
 }
 
 // internalSeekToTime:
@@ -101,20 +99,65 @@ void RunLoopSourcePerformRoutine (void *info) {
 // Called from our internal runloop to reopen the stream at a seeked location
 //
 - (void) internalSeekToTime:(NSNumber*)newSeekTime {
-  [_cacheData setLength:0];
-  [_fileStream setSeekTime:[newSeekTime floatValue]];
-  [_fileStream close];
-  [_fileStream open];
-  [_audioQueue stop];
-  self.status = BTAudioPlayerStatusStop;
-  if (_request) {
-    [_request cancel];
-    [_request release];
-    _request = nil;
-  }
-  _request = [[BTAudioRequest alloc] initRequestWithURL:_url delegate:self];
-  [_request setRequestRange:_fileStream.seekBtyeOffset end:_fileStream.fileLength - 1];
-  [_request start];
+  CDLog(BTDFLAG_AUDIO_PLAYER, @"");
+  Float64 nSeekTime = [newSeekTime floatValue];
+  if ([_playerItem calculatedBitRate] == 0.0 || _playerItem.expectedContentLength <= 0) {
+		return;
+	}
+  [_playerItem reset];
+	//
+	// Calculate the byte offset for seeking
+	//
+	_playerItem.seekByteOffset = _playerItem.dataOffset + (nSeekTime / [_playerItem duration]) * (_playerItem.expectedContentLength - _playerItem.dataOffset);
+  
+	//
+	// Attempt to leave 1 useful packet at the end of the file (although in
+	// reality, this may still seek too far if the file has a long trailer).
+	//
+  
+	if (_playerItem.seekByteOffset > [_playerItem.cacheData length] - 2 * _playerItem.packetBufferSize) {
+		_playerItem.seekByteOffset =[_playerItem.cacheData length] - 2 * _playerItem.packetBufferSize;
+	}
+	
+	//
+	// Store the old time from the audio queue and the time that we're seeking
+	// to so that we'll know the correct time progress after seeking.
+	//
+	_playerItem.seekTime = nSeekTime;
+	
+	//
+	// Attempt to align the seek with a packet boundary
+	//
+	double calculatedBitRate = [_playerItem calculatedBitRate];
+	if (_playerItem.packetDuration > 0 && calculatedBitRate > 0) {
+		UInt32 ioFlags = 0;
+		SInt64 packetAlignedByteOffset;
+		SInt64 seekPacket = floor(nSeekTime / _playerItem.packetDuration);
+		//OSStatus err = AudioFileStreamSeek(_streamID, seekPacket, &packetAlignedByteOffset, &ioFlags);
+    OSStatus err = [_fileStream seekWithPacketOffset:seekPacket outDataByteOffset:&packetAlignedByteOffset ioFlags:&ioFlags];
+		if (!err && !(ioFlags & kAudioFileStreamSeekFlag_OffsetIsEstimated))
+		{
+			_playerItem.seekTime -= ((_playerItem.seekByteOffset - _playerItem.dataOffset) - packetAlignedByteOffset) * 8.0 / calculatedBitRate;
+			_playerItem.seekByteOffset = packetAlignedByteOffset + _playerItem.dataOffset;
+		}
+	}
+  CDLog(BTDFLAG_AUDIO_PLAYER, @"_playerItem.seekByteOffset = %d", _playerItem.seekByteOffset);
+  [_audioQueue reset];
+  [self driveRunLoop];
+//  [_audioQueue start];
+//  self.status = BTAudioPlayerStatusPlaying;
+//  [_fileStream close];
+//  [_fileStream open];
+//  [_audioQueue stop];
+//  self.status = BTAudioPlayerStatusStop;
+//  if (_request) {
+//    [_request cancel];
+//    [_request release];
+//    _request = nil;
+//  }
+//  _request = [[BTAudioRequest alloc] initRequestWithURL:_url delegate:self];
+//  [_request setRequestRange:_fileStream.seekBtyeOffset end:_fileStream.fileLength - 1];
+//  [_request start];
 }
 
 #pragma mark -
@@ -134,7 +177,6 @@ void RunLoopSourcePerformRoutine (void *info) {
 
 - (void)audioRequestDidConnectOK:(BTAudioRequest *)request contentLength:(NSInteger)contentLength {
   CILog(BTDFLAG_NETWORK, @"statusCode = 200");
-  //_fileStream.fileLength = contentLength;
   self.status = BTAudioPlayerStatusWaiting;
   _playerItem.expectedContentLength = contentLength;
 }
@@ -142,10 +184,6 @@ void RunLoopSourcePerformRoutine (void *info) {
 - (void)audioRequest:(BTAudioRequest *)request didReceiveData:(NSData *)data {
   //CDLog(BTDFLAG_NETWORK, @"data length = %d", [data length]);
   [_playerItem appendData:data];
-  //[_cacheData appendData:data];
-//	if ([_fileStream parseBytes:data] != noErr) {
-//		[self error];
-//	}
   [self driveRunLoop];
   
 }
@@ -189,7 +227,6 @@ void RunLoopSourcePerformRoutine (void *info) {
       
     } else {
       _audioQueue.delegate = self;
-      _discontinuity = YES;
       _playerItem.discontinuity = YES;
       _playerItem.bitRate = [_fileStream getBitRate];
       _playerItem.dataOffset = [_fileStream dataOffset];
@@ -200,8 +237,8 @@ void RunLoopSourcePerformRoutine (void *info) {
 
 
 - (void)audioFileStream:(BTAudioFileStream *)stream callBackWithByteCount:(UInt32)byteCount packetCount:(UInt32)packetCount data:(const void *)inputData packetDescs:(AudioStreamPacketDescription *)packetDescs {
-  if (_discontinuity) {
-    _discontinuity = NO;
+  if (_playerItem.discontinuity) {
+    _playerItem.discontinuity = NO;
   }
   if (packetDescs) {
 		for (int i = 0; i < packetCount; ++i) {
@@ -242,7 +279,7 @@ void RunLoopSourcePerformRoutine (void *info) {
 #pragma mark -
 #pragma mark Drive Data
 
-- (void)writeData2 {
+- (void)writeData {
   if ([_audioQueue isFull]||[_thread isCancelled]) {
     return;
   }
@@ -267,7 +304,7 @@ void RunLoopSourcePerformRoutine (void *info) {
     (void)memcpy(bytes, readBytes, readLength);
     _playerItem.byteWriteIndex += readLength;
     if (_fileStream) {
-      if (_discontinuity) {
+      if (_playerItem.discontinuity) {
         [_fileStream parseBytes:bytes dataSize:readLength flags:kAudioFileStreamParseFlag_Discontinuity];
       } else {
         [_fileStream parseBytes:bytes dataSize:readLength flags:0];
@@ -275,77 +312,6 @@ void RunLoopSourcePerformRoutine (void *info) {
     }
   }
 }
-
-- (void)writeData {
-  CDLog(BTDFLAG_AUDIO_PLAYER, @"[_audioQueue isFull]:%d", [_audioQueue isFull]);
-  if ([_audioQueue isFull]||_fileStream.fileLength == 0||[_thread isCancelled]) {
-    return;
-  }
-  //TODO: 后续优化解决办法
-  //改为kAQDefaultBufSize * 16，暂时解决播放本地文件无法启动播放的问题
-  int kAQWriteDataSzie = kAQDefaultBufSize * 16;
-  UInt8 bytes[kAQWriteDataSzie];
-  CFIndex readLength = 0;
-  //
-  // Read the bytes from the stream
-  //
-  
-  int data_len = [_cacheData length];
-  //TODO:
-  //_byteWriteIndex = seekByteOffset;
-  if ((data_len < _fileStream.fileLength && _byteWriteIndex >= data_len)|| data_len <= 0) {
-    //判断当前的播放状态，决定是否要暂停播放
-    if (_byteWriteIndex < _fileStream.fileLength && _playStatus == BTAudioPlayerStatusPlaying) {
-      [_audioQueue pause];
-      self.status = BTAudioPlayerStatusWaiting;
-    }
-    CDLog(BTDFLAG_AUDIO_PLAYER, @"BTDFLAG_AUDIO_PLAYER =============2");
-    return;
-  }
-  if (_byteWriteIndex >= _fileStream.fileLength &&  _playStatus == BTAudioPlayerStatusPlaying) {
-    [_audioQueue endOfStream];
-//    if (self.progress >= self.duration - 0.1) {
-//      self.state = AS_STOPPING;
-//      stopReason = AS_STOPPING_EOF;
-//      err = AudioQueueStop(audioQueue, true);
-//      if (err)
-//      {
-//        [self failWithErrorCode:AS_AUDIO_QUEUE_STOP_FAILED];
-//        return;
-//      }
-//    }
-  }
-  readLength = ((data_len - _byteWriteIndex >= kAQWriteDataSzie) ? kAQWriteDataSzie : (data_len-_byteWriteIndex));
-  //    if (_fileStream && _fileStream.fileLength - _byteWriteIndex >= kAQWriteDataSzie && readLength < kAQWriteDataSzie) {
-  //      //如果当前数据还不够kAQDefaultBufSize这么大，并且数据还没下载完，就等下次
-  //      CDLog(BTDFLAG_AUDIO_PLAYER, @"BTDFLAG_AUDIO_PLAYER =============3");
-  //      return;
-  //    }
-  
-  uint8_t *readBytes = (uint8_t *)[_cacheData mutableBytes];
-  
-  readBytes += _byteWriteIndex; // instance variable to move pointer
-  
-  (void)memcpy(bytes, readBytes, readLength);
-  
-  
-  _byteWriteIndex += readLength;
-  //CDLog(BTDFLAG_AUDIO_PLAYER, @"readLength = %d, _byteWriteIndex = %d", readLength,_byteWriteIndex);
-  //CDLog(BTDFLAG_AUDIO_PLAYER, @"buffersUsed:%d fillBufferIndex:%d", _bufferState.buffersUsed, _bufferState.fillBufferIndex);
-  //seekByteOffset = _byteIndex;
-  
-  if (_fileStream) {
-    if (_discontinuity) {
-      [_fileStream parseBytes:bytes dataSize:readLength flags:kAudioFileStreamParseFlag_Discontinuity];
-    } else {
-      [_fileStream parseBytes:bytes dataSize:readLength flags:0];
-    }
-  }
-
-}
-
-
-
 
 #pragma mark -
 #pragma mark BTAudioPlayer Control
@@ -443,10 +409,6 @@ void RunLoopSourcePerformRoutine (void *info) {
   _fileStream.delegate = nil;
 	[_fileStream release];
 	_fileStream = nil;
-
-  
-  [_cacheData release];
-  _cacheData = nil;
   
   [_url release];
   _url = nil;

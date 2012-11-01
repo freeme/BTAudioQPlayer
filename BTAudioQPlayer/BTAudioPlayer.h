@@ -108,11 +108,11 @@ typedef NS_ENUM(NSInteger, BTAudioPlayerStatus) {
   NSURL *                   _url;
   NSThread *                _thread;
   
-  NSMutableData *                 _cacheData;
-  int                             _byteWriteIndex;
-  BOOL                            _discontinuity;
-  
-  UInt32                              packetBufferSize;
+//  NSMutableData *                 _cacheData;
+//  int                             _byteWriteIndex;
+//  BOOL                            _discontinuity;
+//  
+//  UInt32                              packetBufferSize;
 
   CFRunLoopSourceRef        _runLoopSource;
   CFRunLoopRef              _runLoop;

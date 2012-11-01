@@ -50,6 +50,7 @@
  */
 - (OSStatus)open;
 - (void) close;
+- (OSStatus)seekWithPacketOffset:(SInt64)inPacketOffset  outDataByteOffset:(SInt64 *)outDataByteOffset ioFlags:(UInt32 *)ioFlags;
 - (void)setSeekTime:(double)newSeekTime;
 /*
  * Parses bytes from this audio stream.

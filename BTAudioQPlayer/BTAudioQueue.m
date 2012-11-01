@@ -52,7 +52,7 @@ void audioQueueOutputCallback (void *inUserData, AudioQueueRef inAQ, AudioQueueB
     [_condition lock];
     //_inuse[bufIndex] = NO;
     _bufCountInQueue--;
-    CDLog(BTDFLAG_AUDIO_QUEUE,@"_bufCountInQueue-- = %d", _bufCountInQueue);
+    CVLog(BTDFLAG_AUDIO_QUEUE,@"_bufCountInQueue-- = %d", _bufCountInQueue);
     [_condition broadcast];
     [_condition unlock];
   }
@@ -257,6 +257,12 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
   return status;
 }
 
+- (OSStatus)reset {
+  OSStatus status = AudioQueueReset(_audioQueue);
+  VERIFY_STATUS(status);
+  return status;
+}
+
 - (OSStatus)getCurrentTime:(AudioTimeStamp *)outTimeStamp discontinuity:(Boolean *)outTimelineDiscontinuity {
   OSStatus status = AudioQueueGetCurrentTime(_audioQueue, NULL, outTimeStamp, outTimelineDiscontinuity);
   return status;
@@ -375,7 +381,7 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
   OSStatus err;
   //_inuse[_currentFillBufferIndex] = YES;
   _bufCountInQueue++;
-  CDLog(BTDFLAG_AUDIO_QUEUE,@"_bufCountInQueue++ = %d", _bufCountInQueue);
+  CVLog(BTDFLAG_AUDIO_QUEUE,@"_bufCountInQueue++ = %d", _bufCountInQueue);
   
   if (_packetsFilled) {
     err = AudioQueueEnqueueBuffer(_audioQueue, filledBuffer, _packetsFilled, _packetDescs);
@@ -388,11 +394,11 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
   //    return;
   //  }
   if (_bufCountInQueue == kNumAQBufs) { //||state == AS_FLUSHING_EOF ||
-    CDLog(BTDFLAG_AUDIO_QUEUE, @"statue = %d", _queueStatus);
+    CVLog(BTDFLAG_AUDIO_QUEUE, @"statue = %d", _queueStatus);
     if (_queueStatus == BTAudioQueueStatusInitialized || _queueStatus == BTAudioQueueStatusPaused) {
       UInt32 outNumberOfFramesPrepared;
       //OSStatus status = AudioQueuePrime (_audioQueue,0,&outNumberOfFramesPrepared);
-      CDLog(BTDFLAG_AUDIO_QUEUE,@"[outNumberOfFramesPrepared = %ld", outNumberOfFramesPrepared);
+      CVLog(BTDFLAG_AUDIO_QUEUE,@"[outNumberOfFramesPrepared = %ld", outNumberOfFramesPrepared);
       [self start];
     }
   
@@ -405,10 +411,10 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
     if (self.status == BTAudioQueueStatusPaused || self.status == BTAudioQueueStatusStopping ||self.status == BTAudioQueueStatusStopped) {
       break;
     }
-    CDLog(BTDFLAG_AUDIO_QUEUE,@"[_condition       wait");
+    CVLog(BTDFLAG_AUDIO_QUEUE,@"[_condition       wait");
     [_condition wait];
   }
-  CDLog(BTDFLAG_AUDIO_QUEUE,@"[_condition after wait");
+  CVLog(BTDFLAG_AUDIO_QUEUE,@"[_condition after wait");
   [_condition unlock];
 }
 
