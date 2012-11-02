@@ -143,6 +143,7 @@ void RunLoopSourcePerformRoutine (void *info) {
 	}
   CDLog(BTDFLAG_AUDIO_PLAYER, @"_playerItem.seekByteOffset = %d", _playerItem.seekByteOffset);
   [_audioQueue reset];
+  
   [self driveRunLoop];
 //  [_audioQueue start];
 //  self.status = BTAudioPlayerStatusPlaying;
@@ -283,11 +284,13 @@ void RunLoopSourcePerformRoutine (void *info) {
   if ([_audioQueue isFull]||[_thread isCancelled]) {
     return;
   }
+  CDLog(BTDFLAG_AUDIO_PLAYER, @"------");
   NSUInteger availableDataLength = [_playerItem availableDataLength];
+  //可用数据长度为0了，播放器的状态还在播放
   if (availableDataLength == 0 && (_playStatus == BTAudioPlayerStatusPlaying)) {
-    if ([_playerItem isDataComplete]) {
+    if ([_playerItem isDataComplete]) { //所有数据都下载完了，并且可用数据长度为0，说明数据都已经写到Buffer里了
       [_audioQueue endOfStream];
-    } else {
+    } else { //还有数据没下载完，Queue需要暂停，播放器表现为等待状态
       [_audioQueue pause];
       self.status = BTAudioPlayerStatusWaiting;
     }
@@ -295,11 +298,18 @@ void RunLoopSourcePerformRoutine (void *info) {
   } else {
     //TODO: 后续优化解决办法
     //改为kAQDefaultBufSize * 16，暂时解决播放本地文件无法启动播放的问题
-    int kAQWriteDataSzie = kAQDefaultBufSize * 16;
+    int kAQWriteDataSzie = kAQDefaultBufSize;
+    if ([_audioQueue isEmpty]) {
+      kAQWriteDataSzie = kAQDefaultBufSize * 16;
+    }
     UInt8 bytes[kAQWriteDataSzie];
     NSUInteger readLength = 0;
     readLength = ((availableDataLength >= kAQWriteDataSzie) ? kAQWriteDataSzie : availableDataLength);
     uint8_t *readBytes = (uint8_t *)[_playerItem.cacheData mutableBytes];
+    if (_playerItem.seekByteOffset) {
+      _playerItem.byteWriteIndex = _playerItem.seekByteOffset;
+      _playerItem.seekByteOffset = 0;
+    }
     readBytes += _playerItem.byteWriteIndex; // instance variable to move pointer
     (void)memcpy(bytes, readBytes, readLength);
     _playerItem.byteWriteIndex += readLength;
@@ -349,8 +359,12 @@ void RunLoopSourcePerformRoutine (void *info) {
 }
 
 - (void)startQueue {
+
   [_audioQueue start];
   self.Status = BTAudioPlayerStatusPlaying;
+//  if ([_audioQueue isEmpty]) {
+//    [self driveRunLoop];
+//  }
 }
 
 - (void)pauseQueue {
@@ -437,10 +451,10 @@ void RunLoopSourcePerformRoutine (void *info) {
     return progress;
   }
   AudioTimeStamp queueTime;
-  Boolean discontinuity;
+  Boolean discontinuity = NULL;
   
   OSStatus status = [_audioQueue getCurrentTime:&queueTime discontinuity:&discontinuity];
-  
+  CDLog(BTDFLAG_AUDIO_PLAYER, @"discontinuity = %d", discontinuity);
   const OSStatus AudioQueueStopped = 0x73746F70; // 0x73746F70 is 'stop'
   if (status == AudioQueueStopped) {
     CVLog(BTDFLAG_AUDIO_PLAYER, @"AudioQueueStopped");

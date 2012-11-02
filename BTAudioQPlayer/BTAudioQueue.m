@@ -254,11 +254,13 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
   status = AudioQueueStop(_audioQueue, true);
   VERIFY_STATUS(status);
   _queueStatus = BTAudioQueueStatusStopped;
+  _bufCountInQueue = 0;
   return status;
 }
 
 - (OSStatus)reset {
   OSStatus status = AudioQueueReset(_audioQueue);
+  //OSStatus status = AudioQueueFlush(_audioQueue);
   VERIFY_STATUS(status);
   return status;
 }
@@ -381,7 +383,7 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
   OSStatus err;
   //_inuse[_currentFillBufferIndex] = YES;
   _bufCountInQueue++;
-  CVLog(BTDFLAG_AUDIO_QUEUE,@"_bufCountInQueue++ = %d", _bufCountInQueue);
+  CDLog(BTDFLAG_AUDIO_QUEUE,@"_bufCountInQueue++ = %d", _bufCountInQueue);
   
   if (_packetsFilled) {
     err = AudioQueueEnqueueBuffer(_audioQueue, filledBuffer, _packetsFilled, _packetDescs);

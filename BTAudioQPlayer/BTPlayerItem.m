@@ -102,13 +102,13 @@
 	return bitRate;
 }
 
-- (NSUInteger) byteWriteIndex {
-  if (self.seekByteOffset) {
-    _byteWriteIndex = self.seekByteOffset;
-    self.seekByteOffset = 0;
-  }
-  return _byteWriteIndex;
-}
+//- (NSUInteger) byteWriteIndex {
+//  if (self.seekByteOffset) {
+//    _byteWriteIndex = self.seekByteOffset;
+//    self.seekByteOffset = 0;
+//  }
+//  return _byteWriteIndex;
+//}
 
 //- (void)setSeekTime:(double)newSeekTime {
 //	if ([self calculatedBitRate] == 0.0 || self.expectedContentLength <= 0) {
