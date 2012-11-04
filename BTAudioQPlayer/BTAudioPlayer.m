@@ -278,9 +278,9 @@ void RunLoopSourcePerformRoutine (void *info) {
   CDLog(BTDFLAG_AUDIO_QUEUE, @"<<<<<<<<<<<-->>>>>>>>>>>>");
   self.status = BTAudioPlayerStatusStop;
   
-  _audioQueue.delegate = nil;
-	[_audioQueue release];
-  _audioQueue = nil;
+//  _audioQueue.delegate = nil;
+//	[_audioQueue release];
+//  _audioQueue = nil;
 }
 
 #pragma mark -
@@ -290,12 +290,19 @@ void RunLoopSourcePerformRoutine (void *info) {
   if ([_audioQueue isFull]||[_thread isCancelled]) {
     return;
   }
-  //CDLog(BTDFLAG_AUDIO_PLAYER, @"------bufCountInQueue = %d", _audioQueue.bufCountInQueue);
+  CDLog(BTDFLAG_AUDIO_PLAYER, @"------bufCountInQueue = %d", _audioQueue.bufCountInQueue);
   NSUInteger availableDataLength = [_playerItem availableDataLength];
   //可用数据长度为0了，播放器的状态还在播放
   if (availableDataLength == 0 && (_playStatus == BTAudioPlayerStatusPlaying)) {
     if ([_playerItem isDataComplete]) { //所有数据都下载完了，并且可用数据长度为0，说明数据都已经写到Buffer里了
-      [_audioQueue endOfStream];
+      if (_audioQueue.status == BTAudioQueueStatusStopping) {
+        if ([_audioQueue isEmpty]) {
+          [_audioQueue pause];
+          [self audioQueuePlaybackIsComplete:_audioQueue];
+        }
+      } else {
+        [_audioQueue endOfStream];
+      }
     } else { //还有数据没下载完，Queue需要暂停，播放器表现为等待状态
       [_audioQueue pause];
       self.status = BTAudioPlayerStatusWaiting;
@@ -350,12 +357,12 @@ void RunLoopSourcePerformRoutine (void *info) {
 }
 
 - (BOOL)paused {
-	return (_playStatus == BTAudioPlayerStatusPaused);
+	return (_playStatus == BTAudioPlayerStatusPaused || _playStatus == BTAudioPlayerStatusStop);
 }
 
 - (void)setPaused:(BOOL)paused {
   CDLog(BTDFLAG_AUDIO_PLAYER,@">>>>>>>>>>setPaused:%d",paused);
-	if (paused == (_playStatus == BTAudioPlayerStatusPaused)) {
+	if (paused == [self paused]) {
 		return;
 	}
 
@@ -367,9 +374,17 @@ void RunLoopSourcePerformRoutine (void *info) {
 }
 
 - (void)startQueue {
+  if (self.status == BTAudioPlayerStatusStop) {
+//    if (_audioQueue == nil) {
+      [_playerItem reset];
+      self.status = BTAudioPlayerStatusWaiting;
+      [self driveRunLoop];
+//    }
+  } else {
+    [_audioQueue start];
+    self.status = BTAudioPlayerStatusPlaying;
+  }
 
-  [_audioQueue start];
-  self.Status = BTAudioPlayerStatusPlaying;
 //  if ([_audioQueue isEmpty]) {
 //    [self driveRunLoop];
 //  }
@@ -377,7 +392,7 @@ void RunLoopSourcePerformRoutine (void *info) {
 
 - (void)pauseQueue {
   [_audioQueue pause];
-  self.Status = BTAudioPlayerStatusPaused;
+  self.status = BTAudioPlayerStatusPaused;
 }
 
 - (void)setStatus:(BTAudioPlayerStatus)status {

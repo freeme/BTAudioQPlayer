@@ -174,6 +174,7 @@
   self.seekByteOffset = 0;
   self.seekTime = 0;
   self.discontinuity = YES;
+  self.byteWriteIndex = 0;
 //  self.processedPacketsSizeTotal = 0;
 //  self.processedPacketsCount = 0;
 }

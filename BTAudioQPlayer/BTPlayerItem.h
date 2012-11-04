@@ -10,7 +10,7 @@
 
 @interface BTPlayerItem: NSObject {
   NSMutableData *                 _cacheData;
-  NSUInteger                      _byteWriteIndex;
+  volatile NSUInteger                      _byteWriteIndex;
 //  NSUInteger                      _packetBufferSize;
 //  NSUInteger                      _expectedContentLength;
 //  
@@ -25,7 +25,7 @@
   Float64       _sampleRate;
   BOOL          _isFormatVBR;
 //  BOOL          _discontinuity;
-  BOOL _isDataComplete;
+  volatile BOOL _isDataComplete;
 }
 @property (nonatomic, retain) NSURL *url;
 @property (nonatomic, copy) NSString *title;
@@ -39,13 +39,13 @@
 @property (nonatomic) NSUInteger  dataOffset;
 @property (nonatomic) NSUInteger  bitRate;
 
-@property (nonatomic) NSUInteger  seekByteOffset;
+@property (nonatomic) volatile NSUInteger  seekByteOffset;
 @property (nonatomic) Float64     seekTime;
 @property (nonatomic, readonly) Float64     packetDuration;
 @property (nonatomic, readonly) Float64     sampleRate;
 @property (nonatomic, readonly) BOOL        isFormatVBR;
 @property (nonatomic) BOOL        discontinuity;
-@property (nonatomic, readonly)   NSMutableData *cacheData;
+@property (readonly)   NSMutableData *cacheData;
 @property (nonatomic, readonly)   BOOL isDataComplete;
 @property (nonatomic)   BOOL seekRequested;
 + (BTPlayerItem *)playerItemWithURL:(NSURL *)URL;

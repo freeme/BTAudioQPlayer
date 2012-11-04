@@ -248,10 +248,10 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
   CDLog(BTDFLAG_AUDIO_QUEUE, @" >>>>>>>>>> endOfStream");
   _queueStatus = BTAudioQueueStatusStopping;
 	OSStatus status = AudioQueueFlush(_audioQueue);
-  status = AudioQueueReset(_audioQueue);
-	VERIFY_STATUS(status);
-  status = AudioQueueStop(_audioQueue, false);
-  VERIFY_STATUS(status);
+//  status = AudioQueueReset(_audioQueue);
+//	VERIFY_STATUS(status);
+//  status = AudioQueueStop(_audioQueue, false);
+//  VERIFY_STATUS(status);
 	return status;
 }
 
