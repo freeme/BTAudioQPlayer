@@ -19,13 +19,12 @@
 #define kAQMaxPacketDescs 512	// Number of packet descriptions in our array
 
 typedef NS_ENUM(NSInteger, BTAudioQueueStatus) {
-	BTAudioQueueStatusInitialized,
+	BTAudioQueueStatusStopped,
   BTAudioQueueStatusStarting, //这个时候Queue还没有播放出声音
   BTAudioQueueStatusStarted,
   //BTAudioQueueStatusReseted,
   BTAudioQueueStatusPaused,
   BTAudioQueueStatusStopping, //这个时候Queue中还有Buffer没有播放完
-  BTAudioQueueStatusStopped,
 } ;
 
 @protocol BTAudioQueueDelegate;
@@ -124,5 +123,5 @@ typedef NS_ENUM(NSInteger, BTAudioQueueStatus) {
  */
 - (void)audioQueuePlaybackIsComplete:(BTAudioQueue *)audioQueue;
 
-//- (void)audioQueueIsFull:(BTAudioQueue *)audioQueue;
+- (void)audioQueueIsFull:(BTAudioQueue *)audioQueue;
 @end

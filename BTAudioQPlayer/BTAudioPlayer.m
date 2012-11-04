@@ -28,7 +28,7 @@ void RunLoopSourcePerformRoutine (void *info) {
 }
 
 - (void)dealloc {
-	[self cancel];
+	//[self cancel];
   
   _delegate = nil; 
   [_playerItem release];
@@ -61,7 +61,7 @@ void RunLoopSourcePerformRoutine (void *info) {
   //_audioQueue = [[BTAudioQueue alloc] initQueueWithDelegate:self];
   _fileStream = [[BTAudioFileStream alloc] initFileStreamWithDelegate:self];
   [_fileStream open];
-  _playStatus = BTAudioPlayerStatusStop;
+  self.status = BTAudioPlayerStatusStop;
   
   while (_thread && ![_thread isCancelled]) {
 
@@ -106,8 +106,9 @@ void RunLoopSourcePerformRoutine (void *info) {
   if ([_playerItem calculatedBitRate] == 0.0 || _playerItem.expectedContentLength <= 0) {
 		return;
 	}
-  [_audioQueue reset];
   [_audioQueue pause];
+  [_audioQueue reset];
+  
   self.status = BTAudioPlayerStatusWaiting;
   _playerItem.seekRequested = YES;
   [_playerItem reset];
@@ -268,21 +269,27 @@ void RunLoopSourcePerformRoutine (void *info) {
 //Callback from AQClient thread
 - (void)audioQueuePlaybackIsStarting:(BTAudioQueue *)audioQueue {
   CDLog(BTDFLAG_AUDIO_QUEUE, @">>>>>>>>");
-  self.status = BTAudioPlayerStatusPlaying;
   if (self.status == BTAudioPlayerStatusWaiting ||self.status == BTAudioPlayerStatusStop  ) {
     self.status = BTAudioPlayerStatusPlaying;
+    [_audioQueue start];
   }
 }
 //Callback from AQClient thread
 - (void)audioQueuePlaybackIsComplete:(BTAudioQueue *)audioQueue {
   CDLog(BTDFLAG_AUDIO_QUEUE, @"<<<<<<<<<<<-->>>>>>>>>>>>");
-  self.status = BTAudioPlayerStatusStop;
+  self.status = BTAudioPlayerStatusStop; //TODO: fix bug, bad access when play another music
   
 //  _audioQueue.delegate = nil;
 //	[_audioQueue release];
 //  _audioQueue = nil;
 }
 
+- (void)audioQueueIsFull:(BTAudioQueue *)audioQueue {
+  if (self.status == BTAudioPlayerStatusWaiting) {
+    self.status = BTAudioPlayerStatusPlaying;
+    [_audioQueue start];
+  }
+}
 #pragma mark -
 #pragma mark Drive Data
 
@@ -290,7 +297,7 @@ void RunLoopSourcePerformRoutine (void *info) {
   if ([_audioQueue isFull]||[_thread isCancelled]) {
     return;
   }
-  CDLog(BTDFLAG_AUDIO_PLAYER, @"------bufCountInQueue = %d", _audioQueue.bufCountInQueue);
+  //CDLog(BTDFLAG_AUDIO_PLAYER, @"------bufCountInQueue = %d", _audioQueue.bufCountInQueue);
   NSUInteger availableDataLength = [_playerItem availableDataLength];
   //可用数据长度为0了，播放器的状态还在播放
   if (availableDataLength == 0 && (_playStatus == BTAudioPlayerStatusPlaying)) {

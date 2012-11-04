@@ -10,6 +10,7 @@
 
 @implementation BTPlayerItem
 @synthesize cacheData = _cacheData;
+@synthesize readBytes = _readBytes;
 @synthesize isDataComplete = _isDataComplete;
 @synthesize sampleRate = _sampleRate;
 @synthesize packetDuration = _packetDuration;
@@ -34,6 +35,7 @@
   if (self) {
     self.url = URL;
     _cacheData = [[NSMutableData alloc] initWithCapacity:1024];
+    _readBytes = [_cacheData mutableBytes];
   }
   return self;
 }

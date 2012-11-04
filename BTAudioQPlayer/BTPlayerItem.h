@@ -10,6 +10,7 @@
 
 @interface BTPlayerItem: NSObject {
   NSMutableData *                 _cacheData;
+  uint8_t *_readBytes;
   volatile NSUInteger                      _byteWriteIndex;
 //  NSUInteger                      _packetBufferSize;
 //  NSUInteger                      _expectedContentLength;
@@ -46,6 +47,7 @@
 @property (nonatomic, readonly) BOOL        isFormatVBR;
 @property (nonatomic) BOOL        discontinuity;
 @property (readonly)   NSMutableData *cacheData;
+@property (readonly)   uint8_t *readBytes;
 @property (nonatomic, readonly)   BOOL isDataComplete;
 @property (nonatomic)   BOOL seekRequested;
 + (BTPlayerItem *)playerItemWithURL:(NSURL *)URL;
