@@ -14,32 +14,12 @@
 	id<BTAudioFileStreamDelegate> _delegate;
 	OSStatus _callbackStatus;
   AudioStreamBasicDescription _asbd;
-  
-  UInt64  _processedPacketsSizeTotal;
-  UInt32  _processedPacketsCount;
-  float   _packetDuration;
-  UInt64  _fileLength;
-  UInt64  _dataOffset;
   BOOL    _isFormatVBR;
-  UInt32  _bitRate;
-  
-  NSInteger                          _seekByteOffset;
-  float                              _seekTime;
-  Float64 _sampleRate;
 }
 
 
 @property (nonatomic) AudioStreamBasicDescription asbd;
 @property (nonatomic,assign) id<BTAudioFileStreamDelegate> delegate;
-//@property (nonatomic, readonly) UInt64 processedPacketsSizeTotal;
-//@property (nonatomic, readonly) UInt32 processedPacketsCount;
-@property (nonatomic) UInt64 fileLength;
-@property (nonatomic) UInt64 dataOffset;
-@property (nonatomic) float packetDuration;
-@property (nonatomic) float seekTime;
-@property (nonatomic) NSInteger seekBtyeOffset;
-@property (nonatomic) Float64 sampleRate;
-//@property (nonatomic) BOOL formatIsVBR;
 
 - (id)initFileStreamWithDelegate:(id<BTAudioFileStreamDelegate>)delegate;
 
@@ -51,22 +31,7 @@
 - (OSStatus)open;
 - (void) close;
 - (OSStatus)seekWithPacketOffset:(SInt64)inPacketOffset  outDataByteOffset:(SInt64 *)outDataByteOffset ioFlags:(UInt32 *)ioFlags;
-- (void)setSeekTime:(double)newSeekTime;
-/*
- * Parses bytes from this audio stream.
- * Delegate will be notified asynchronously of any magic cookie, 
- * AudioStreamBasicDescription, or packet data resulting from this
- * parsing call.  All asynchronous notifications will happen before
- * this method returns.
- *
- * Returns an error code if an error occurs.  See documentation for
- * AudioFileStreamParseBytes, AudioFileStreamGetPropertyInfo, or
- * AudioFileStreamGetProperty for possible errors.  Errors from this 
- * method are generally unexpected.  If one occurs, it is probably
- * best not to continue parsing with this AudioFileStream object.
- */
-//- (OSStatus)parseBytes:(NSData *)data;
-//- (OSStatus)parseBytes:(const void*)inData dataSize:(UInt32)inDataSize;
+
 - (OSStatus)parseBytes:(const void*)inData dataSize:(UInt32)inDataSize flags:(UInt32)inFlags;
 
 - (NSString*)getFileFormat;
@@ -77,10 +42,7 @@
 - (UInt32)getPacketSizeUpperBound;
 - (UInt64)getAverageBytesPerPacket;
 - (UInt32)getBitRate;
-
 - (UInt32)getPacketBufferSize;
-- (float)calculatedBitRate;
-- (float)duration;
 
 @end
 

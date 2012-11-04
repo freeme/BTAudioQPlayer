@@ -43,6 +43,24 @@
   _sampleRate = _asbd.mSampleRate;
   _packetDuration = (float)_asbd.mFramesPerPacket / _sampleRate;
   _isFormatVBR = (_asbd.mBytesPerPacket == 0 || _asbd.mFramesPerPacket == 0);
+  
+  //  NSString *fileFormat = [self getFileFormat];
+  //  UInt64 audioDataByteCount = [self getAudioDataByteCount];
+  //  UInt64 audioDataPacketCount = [self getAudioDataPacketCount];
+  //  UInt32 maxPacketSize = [self getMaxPacketSize];
+  //  _dataOffset = [self getDataOffset];
+  //  UInt32 packetSizeUpperBound = [self getPacketSizeUpperBound];
+  //  UInt64 averageBytesPerPacket = [self getAverageBytesPerPacket];
+  //  _bitRate = [self getBitRate];
+  //  CILog(BTDFLAG_FILE_STREAM, @"isFormatVBR           = %d", _isFormatVBR);
+  //  CILog(BTDFLAG_FILE_STREAM, @"fileFormat            = %@", fileFormat);
+  //  CILog(BTDFLAG_FILE_STREAM, @"audioDataByteCount    = %lld", audioDataByteCount);
+  //  CILog(BTDFLAG_FILE_STREAM, @"audioDataPacketCount  = %lld", audioDataPacketCount);
+  //  CILog(BTDFLAG_FILE_STREAM, @"maxPacketSize         = %ld", maxPacketSize);
+  //  CILog(BTDFLAG_FILE_STREAM, @"dataOffset            = %lld", _dataOffset);
+  //  CILog(BTDFLAG_FILE_STREAM, @"packetSizeUpperBound  = %ld", packetSizeUpperBound);
+  //  CILog(BTDFLAG_FILE_STREAM, @"averageBytesPerPacket = %lld", averageBytesPerPacket);
+  //  CILog(BTDFLAG_FILE_STREAM, @"bitRate               = %ld", _bitRate);
 }
 
 - (void)appendData:(NSData*)data {

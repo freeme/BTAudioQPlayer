@@ -11,12 +11,6 @@
 
 @synthesize delegate = _delegate;
 @synthesize asbd = _asbd;
-@synthesize fileLength = _fileLength;
-@synthesize dataOffset = _dataOffset;
-@synthesize packetDuration = _packetDuration;
-@synthesize seekTime = _seekTime;
-@synthesize seekBtyeOffset = _seekByteOffset;
-@synthesize sampleRate = _sampleRate;
 
 // These are declarations for callbacks used by our AudioFileStream.  In both cases,
 // they simply forward the call onto the self object that created the file stream.
@@ -146,32 +140,14 @@ void packetCallback(void *clientData, UInt32 byteCount, UInt32 packetCount, cons
 			return;
 		}
 	}
-	_sampleRate = _asbd.mSampleRate;
-  _packetDuration = (float)_asbd.mFramesPerPacket / _sampleRate;
+
   _isFormatVBR = (_asbd.mBytesPerPacket == 0 || _asbd.mFramesPerPacket == 0);
-  NSString *fileFormat = [self getFileFormat];
-  UInt64 audioDataByteCount = [self getAudioDataByteCount];
-  UInt64 audioDataPacketCount = [self getAudioDataPacketCount];
-  UInt32 maxPacketSize = [self getMaxPacketSize];
-  _dataOffset = [self getDataOffset];
-  UInt32 packetSizeUpperBound = [self getPacketSizeUpperBound];
-  UInt64 averageBytesPerPacket = [self getAverageBytesPerPacket];
-  _bitRate = [self getBitRate];
-  CILog(BTDFLAG_FILE_STREAM, @"isFormatVBR           = %d", _isFormatVBR);
-  CILog(BTDFLAG_FILE_STREAM, @"fileFormat            = %@", fileFormat);
-  CILog(BTDFLAG_FILE_STREAM, @"audioDataByteCount    = %lld", audioDataByteCount);
-  CILog(BTDFLAG_FILE_STREAM, @"audioDataPacketCount  = %lld", audioDataPacketCount);
-  CILog(BTDFLAG_FILE_STREAM, @"maxPacketSize         = %ld", maxPacketSize);
-  CILog(BTDFLAG_FILE_STREAM, @"dataOffset            = %lld", _dataOffset);
-  CILog(BTDFLAG_FILE_STREAM, @"packetSizeUpperBound  = %ld", packetSizeUpperBound);
-  CILog(BTDFLAG_FILE_STREAM, @"averageBytesPerPacket = %lld", averageBytesPerPacket);
-  CILog(BTDFLAG_FILE_STREAM, @"bitRate               = %ld", _bitRate);
-  
-  
 	[_delegate audioFileStream:self isReadyToProducePacketsWithASBD:_asbd];
 }
 
 - (void)propertyDidChange:(AudioFileStreamPropertyID)property {
+  char *s = (char *)&property;
+  CDLog(BTDFLAG_FILE_STREAM, @"property = %c%c%c%c",s[3],s[2],s[1],s[0]);
 	if (_callbackStatus != noErr) {
 		// We had a previous error during the current parse.  We should
 		// stop processing this parse.
@@ -200,14 +176,6 @@ void packetCallback(void *clientData, UInt32 byteCount, UInt32 packetCount, cons
 }
 
 - (void)callBackWithByteCount:(UInt32)byteCount packetCount:(UInt32)packetCount data:(const void *)inputData packetDescs:(AudioStreamPacketDescription *)packetDescs {
-  CVLog(BTDFLAG_FILE_STREAM, @"");
-  if (packetDescs) {
-		for (int i = 0; i < packetCount; ++i) {
-			UInt64 packetSize   = packetDescs[i].mDataByteSize;
-      _processedPacketsSizeTotal += packetSize;
-      _processedPacketsCount += 1;
-    }
-  }
   [_delegate audioFileStream:self
            callBackWithByteCount:byteCount packetCount:packetCount data:inputData packetDescs:packetDescs];
 }
@@ -308,15 +276,15 @@ void packetCallback(void *clientData, UInt32 byteCount, UInt32 packetCount, cons
   return value;
 }
 
-- (float)duration {
-	float calculatedBitRate = [self calculatedBitRate];
-	
-	if (calculatedBitRate == 0 || _fileLength == 0) {
-		return 0.0;
-  }
-	
-	return (_fileLength - _dataOffset) / (calculatedBitRate * 0.125);
-}
+//- (float)duration {
+//	float calculatedBitRate = [self calculatedBitRate];
+//	
+//	if (calculatedBitRate == 0 || _fileLength == 0) {
+//		return 0.0;
+//  }
+//	
+//	return (_fileLength - _dataOffset) / (calculatedBitRate * 0.125);
+//}
 
 //
 // calculatedBitRate
@@ -325,72 +293,72 @@ void packetCallback(void *clientData, UInt32 byteCount, UInt32 packetCount, cons
 //   packet if available, otherwise it returns the nominal bitrate. Will return
 //   zero if no useful option available.
 //
-- (float)calculatedBitRate {
-  float bitRate = 0.0;
-	if (_isFormatVBR) { //packetDuration = asbd.mFramesPerPacket / asbd.mSampleRate
-		if (_packetDuration && _processedPacketsCount > 50) {
-			float averagePacketByteSize = (float)_processedPacketsSizeTotal / _processedPacketsCount;
-      CVLog(BTDFLAG_FILE_STREAM, @"averagePacketByteSize = %.4f",averagePacketByteSize);
-      bitRate = 8.0 * averagePacketByteSize / _packetDuration;
-    } else if (_bitRate) {
-			bitRate = _bitRate;
-    }
-  } else {
-		bitRate = 8.0 * _asbd.mSampleRate * _asbd.mBytesPerPacket * _asbd.mFramesPerPacket;
-    _bitRate = bitRate;
-  }
-  CVLog(BTDFLAG_FILE_STREAM, @"                   bitRate = %.4f",bitRate);
-  CVLog(BTDFLAG_FILE_STREAM, @"           _packetDuration = %.4f",_packetDuration);
-  CVLog(BTDFLAG_FILE_STREAM, @"    _processedPacketsCount = %d",_processedPacketsCount);
-  CVLog(BTDFLAG_FILE_STREAM, @"_processedPacketsSizeTotal = %d",_processedPacketsSizeTotal);
-	return bitRate;
-}
-
-- (void)setSeekTime:(double)newSeekTime {
-	if ([self calculatedBitRate] == 0.0 || _fileLength <= 0) {
-		return;
-	}
-	
-	//
-	// Calculate the byte offset for seeking
-	//
-	_seekByteOffset = _dataOffset +
-  (newSeekTime / [self duration]) * (_fileLength - _dataOffset);
-  
-	//
-	// Attempt to leave 1 useful packet at the end of the file (although in
-	// reality, this may still seek too far if the file has a long trailer).
-	//
-  UInt32 packetBufferSize = [self getPacketBufferSize];
-	if (_seekByteOffset > _fileLength - 2 * packetBufferSize)
-	{
-		_seekByteOffset = _fileLength - 2 * packetBufferSize;
-	}
-	
-	//
-	// Store the old time from the audio queue and the time that we're seeking
-	// to so that we'll know the correct time progress after seeking.
-	//
-	_seekTime = newSeekTime;
-	
-	//
-	// Attempt to align the seek with a packet boundary
-	//
-	double calculatedBitRate = [self calculatedBitRate];
-	if (_packetDuration > 0 &&
-      calculatedBitRate > 0)
-	{
-		UInt32 ioFlags = 0;
-		SInt64 packetAlignedByteOffset;
-		SInt64 seekPacket = floor(newSeekTime / _packetDuration);
-		OSStatus err = AudioFileStreamSeek(_streamID, seekPacket, &packetAlignedByteOffset, &ioFlags);
-		if (!err && !(ioFlags & kAudioFileStreamSeekFlag_OffsetIsEstimated))
-		{
-			_seekTime -= ((_seekByteOffset - _dataOffset) - packetAlignedByteOffset) * 8.0 / calculatedBitRate;
-			_seekByteOffset = packetAlignedByteOffset + _dataOffset;
-		}
-	}
-  
+//- (float)calculatedBitRate {
+//  float bitRate = 0.0;
+//	if (_isFormatVBR) { //packetDuration = asbd.mFramesPerPacket / asbd.mSampleRate
+//		if (_packetDuration && _processedPacketsCount > 50) {
+//			float averagePacketByteSize = (float)_processedPacketsSizeTotal / _processedPacketsCount;
+//      CVLog(BTDFLAG_FILE_STREAM, @"averagePacketByteSize = %.4f",averagePacketByteSize);
+//      bitRate = 8.0 * averagePacketByteSize / _packetDuration;
+//    } else if (_bitRate) {
+//			bitRate = _bitRate;
+//    }
+//  } else {
+//		bitRate = 8.0 * _asbd.mSampleRate * _asbd.mBytesPerPacket * _asbd.mFramesPerPacket;
+//    _bitRate = bitRate;
+//  }
+//  CVLog(BTDFLAG_FILE_STREAM, @"                   bitRate = %.4f",bitRate);
+//  CVLog(BTDFLAG_FILE_STREAM, @"           _packetDuration = %.4f",_packetDuration);
+//  CVLog(BTDFLAG_FILE_STREAM, @"    _processedPacketsCount = %d",_processedPacketsCount);
+//  CVLog(BTDFLAG_FILE_STREAM, @"_processedPacketsSizeTotal = %d",_processedPacketsSizeTotal);
+//	return bitRate;
+//}
+//
+//- (void)setSeekTime:(double)newSeekTime {
+//	if ([self calculatedBitRate] == 0.0 || _fileLength <= 0) {
+//		return;
+//	}
+//	
+//	//
+//	// Calculate the byte offset for seeking
+//	//
+//	_seekByteOffset = _dataOffset +
+//  (newSeekTime / [self duration]) * (_fileLength - _dataOffset);
+//  
+//	//
+//	// Attempt to leave 1 useful packet at the end of the file (although in
+//	// reality, this may still seek too far if the file has a long trailer).
+//	//
+//  UInt32 packetBufferSize = [self getPacketBufferSize];
+//	if (_seekByteOffset > _fileLength - 2 * packetBufferSize)
+//	{
+//		_seekByteOffset = _fileLength - 2 * packetBufferSize;
+//	}
+//	
+//	//
+//	// Store the old time from the audio queue and the time that we're seeking
+//	// to so that we'll know the correct time progress after seeking.
+//	//
+//	_seekTime = newSeekTime;
+//	
+//	//
+//	// Attempt to align the seek with a packet boundary
+//	//
+//	double calculatedBitRate = [self calculatedBitRate];
+//	if (_packetDuration > 0 &&
+//      calculatedBitRate > 0)
+//	{
+//		UInt32 ioFlags = 0;
+//		SInt64 packetAlignedByteOffset;
+//		SInt64 seekPacket = floor(newSeekTime / _packetDuration);
+//		OSStatus err = AudioFileStreamSeek(_streamID, seekPacket, &packetAlignedByteOffset, &ioFlags);
+//		if (!err && !(ioFlags & kAudioFileStreamSeekFlag_OffsetIsEstimated))
+//		{
+//			_seekTime -= ((_seekByteOffset - _dataOffset) - packetAlignedByteOffset) * 8.0 / calculatedBitRate;
+//			_seekByteOffset = packetAlignedByteOffset + _dataOffset;
+//		}
+//	}
+//  
 	//
 	// Close the current read straem
 	//
@@ -413,7 +381,7 @@ void packetCallback(void *clientData, UInt32 byteCount, UInt32 packetCount, cons
 	// seekByteOffset.
 	//
 	//[self openReadStream];
-}
+//}
 
 - (OSStatus)seekWithPacketOffset:(SInt64)inPacketOffset  outDataByteOffset:(SInt64 *)outDataByteOffset ioFlags:(UInt32 *)ioFlags {
   OSStatus status = AudioFileStreamSeek(_streamID, inPacketOffset, outDataByteOffset, ioFlags);

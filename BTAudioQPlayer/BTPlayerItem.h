@@ -47,7 +47,7 @@
 @property (nonatomic) BOOL        discontinuity;
 @property (nonatomic, readonly)   NSMutableData *cacheData;
 @property (nonatomic, readonly)   BOOL isDataComplete;
-
+@property (nonatomic)   BOOL seekRequested;
 + (BTPlayerItem *)playerItemWithURL:(NSURL *)URL;
 - (id)initWithURL:(NSURL*)URL;
 - (void)appendData:(NSData*)data;

@@ -203,6 +203,7 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
     }
     _currentFillBufferIndex = 0;
     _bufCountInQueue = 0;
+    _volume = 0.0;
     _condition = [[NSCondition alloc] init];
   }
   return self;
@@ -211,6 +212,14 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
 - (OSStatus)setMagicCookie:(NSData *)magicCookie {
 	return AudioQueueSetProperty(_audioQueue, kAudioQueueProperty_MagicCookie, magicCookie.bytes, magicCookie.length);
 }
+
+//- (void) increaseVolume {
+//  if (_volume < 1.0) {
+//      CDLog(BTDFLAG_AUDIO_QUEUE, @"_volume = %.3f", _volume);
+//      AudioQueueSetParameter (_audioQueue, kAudioQueueParam_Volume,_volume);
+//
+//  }
+//}
 
 - (OSStatus)start {
   CDLog(BTDFLAG_AUDIO_QUEUE, @" >>>>>>>>>> start");
@@ -254,13 +263,18 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
   status = AudioQueueStop(_audioQueue, true);
   VERIFY_STATUS(status);
   _queueStatus = BTAudioQueueStatusStopped;
-  _bufCountInQueue = 0;
+  //_bufCountInQueue = 0;
   return status;
 }
 
 - (OSStatus)reset {
-  OSStatus status = AudioQueueReset(_audioQueue);
-  //OSStatus status = AudioQueueFlush(_audioQueue);
+
+  OSStatus status = noErr;
+  status = AudioQueueReset(_audioQueue);
+  status = AudioQueueFlush(_audioQueue);
+  status = AudioQueuePause(_audioQueue);
+  
+  //_queueStatus = BTAudioQueueStatusReseted;
   VERIFY_STATUS(status);
   return status;
 }
@@ -269,6 +283,10 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
   OSStatus status = AudioQueueGetCurrentTime(_audioQueue, NULL, outTimeStamp, outTimelineDiscontinuity);
   return status;
 }
+
+//- (BOOL)isReseted {
+//  return (_queueStatus == BTAudioQueueStatusReseted);
+//}
 
 - (BOOL)isStopping {
   return ((_queueStatus == BTAudioQueueStatusStopping) || (_queueStatus == BTAudioQueueStatusStopped));
@@ -298,7 +316,7 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
 			SInt64 packetOffset = packetDescs[i].mStartOffset;
 			SInt64 packetSize   = packetDescs[i].mDataByteSize;
 			SInt64 bufSpaceRemaining;
-      
+      //CDLog(BTDFLAG_AUDIO_QUEUE, @"--->i = %d",i);
       // If the audio was terminated before this point, then
       // exit.
       //      if ([self isFinishing]){
@@ -323,6 +341,7 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
       // If the audio was terminated while waiting for a buffer, then
       // exit.
       if ([self isStopping]) {
+        CDLog(BTDFLAG_AUDIO_QUEUE, @"-------------------------1");
         return;
       }
       
@@ -383,7 +402,7 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
   OSStatus err;
   //_inuse[_currentFillBufferIndex] = YES;
   _bufCountInQueue++;
-  CDLog(BTDFLAG_AUDIO_QUEUE,@"_bufCountInQueue++ = %d", _bufCountInQueue);
+  //CDLog(BTDFLAG_AUDIO_QUEUE,@"_bufCountInQueue++ = %d", _bufCountInQueue);
   
   if (_packetsFilled) {
     err = AudioQueueEnqueueBuffer(_audioQueue, filledBuffer, _packetsFilled, _packetDescs);
@@ -398,9 +417,9 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
   if (_bufCountInQueue == kNumAQBufs) { //||state == AS_FLUSHING_EOF ||
     CVLog(BTDFLAG_AUDIO_QUEUE, @"statue = %d", _queueStatus);
     if (_queueStatus == BTAudioQueueStatusInitialized || _queueStatus == BTAudioQueueStatusPaused) {
-      UInt32 outNumberOfFramesPrepared;
+      //UInt32 outNumberOfFramesPrepared;
       //OSStatus status = AudioQueuePrime (_audioQueue,0,&outNumberOfFramesPrepared);
-      CVLog(BTDFLAG_AUDIO_QUEUE,@"[outNumberOfFramesPrepared = %ld", outNumberOfFramesPrepared);
+      //CDLog(BTDFLAG_AUDIO_QUEUE,@"[outNumberOfFramesPrepared = %ld", outNumberOfFramesPrepared);
       [self start];
     }
   

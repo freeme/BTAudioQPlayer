@@ -67,9 +67,9 @@ void RunLoopSourcePerformRoutine (void *info) {
 
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     @try {
-      CDLog(BTDFLAG_AUDIO_PLAYER, @"Before CFRunLoopRun %d %d",[_thread isCancelled],_thread);
+      //CDLog(BTDFLAG_AUDIO_PLAYER, @"Before CFRunLoopRun %d %d",[_thread isCancelled],_thread);
       CFRunLoopRun();
-      CDLog(BTDFLAG_AUDIO_PLAYER, @"AFter CFRunLoopRun %d %d", [_thread isCancelled],_thread);
+      //CDLog(BTDFLAG_AUDIO_PLAYER, @"AFter CFRunLoopRun %d %d", [_thread isCancelled],_thread);
     }@catch (NSException *exception) {
       
     }@finally {
@@ -90,6 +90,8 @@ void RunLoopSourcePerformRoutine (void *info) {
 
 - (void)seekToTime:(Float64)newSeekTime {
 //  [_audioQueue pause];
+//  [_audioQueue reset];
+//  [_audioQueue pause];
 //  self.status = BTAudioPlayerStatusWaiting;
   [self performSelector:@selector(internalSeekToTime:) onThread:_thread withObject:[NSNumber numberWithFloat:newSeekTime] waitUntilDone:YES];
 }
@@ -104,6 +106,10 @@ void RunLoopSourcePerformRoutine (void *info) {
   if ([_playerItem calculatedBitRate] == 0.0 || _playerItem.expectedContentLength <= 0) {
 		return;
 	}
+  [_audioQueue reset];
+  [_audioQueue pause];
+  self.status = BTAudioPlayerStatusWaiting;
+  _playerItem.seekRequested = YES;
   [_playerItem reset];
 	//
 	// Calculate the byte offset for seeking
@@ -142,7 +148,7 @@ void RunLoopSourcePerformRoutine (void *info) {
 		}
 	}
   CDLog(BTDFLAG_AUDIO_PLAYER, @"_playerItem.seekByteOffset = %d", _playerItem.seekByteOffset);
-  [_audioQueue reset];
+  
   
   [self driveRunLoop];
 //  [_audioQueue start];
@@ -230,7 +236,7 @@ void RunLoopSourcePerformRoutine (void *info) {
       _audioQueue.delegate = self;
       _playerItem.discontinuity = YES;
       _playerItem.bitRate = [_fileStream getBitRate];
-      _playerItem.dataOffset = [_fileStream dataOffset];
+      _playerItem.dataOffset = [_fileStream getDataOffset];
       _playerItem.fileFormat = [_fileStream getFileFormat];
     }
 	}
@@ -261,7 +267,7 @@ void RunLoopSourcePerformRoutine (void *info) {
 
 //Callback from AQClient thread
 - (void)audioQueuePlaybackIsStarting:(BTAudioQueue *)audioQueue {
-  CDLog(BTDFLAG_AUDIO_QUEUE, @"");
+  CDLog(BTDFLAG_AUDIO_QUEUE, @">>>>>>>>");
   self.status = BTAudioPlayerStatusPlaying;
   if (self.status == BTAudioPlayerStatusWaiting ||self.status == BTAudioPlayerStatusStop  ) {
     self.status = BTAudioPlayerStatusPlaying;
@@ -284,7 +290,7 @@ void RunLoopSourcePerformRoutine (void *info) {
   if ([_audioQueue isFull]||[_thread isCancelled]) {
     return;
   }
-  CDLog(BTDFLAG_AUDIO_PLAYER, @"------");
+  //CDLog(BTDFLAG_AUDIO_PLAYER, @"------bufCountInQueue = %d", _audioQueue.bufCountInQueue);
   NSUInteger availableDataLength = [_playerItem availableDataLength];
   //可用数据长度为0了，播放器的状态还在播放
   if (availableDataLength == 0 && (_playStatus == BTAudioPlayerStatusPlaying)) {
@@ -298,22 +304,24 @@ void RunLoopSourcePerformRoutine (void *info) {
   } else {
     //TODO: 后续优化解决办法
     //改为kAQDefaultBufSize * 16，暂时解决播放本地文件无法启动播放的问题
-    int kAQWriteDataSzie = kAQDefaultBufSize;
-    if ([_audioQueue isEmpty]) {
-      kAQWriteDataSzie = kAQDefaultBufSize * 16;
-    }
+    int kAQWriteDataSzie = kAQDefaultBufSize * (16 -_audioQueue.bufCountInQueue);
+//    if ([_audioQueue isEmpty]) {
+//      kAQWriteDataSzie = kAQDefaultBufSize * 16;
+//    }
     UInt8 bytes[kAQWriteDataSzie];
     NSUInteger readLength = 0;
     readLength = ((availableDataLength >= kAQWriteDataSzie) ? kAQWriteDataSzie : availableDataLength);
     uint8_t *readBytes = (uint8_t *)[_playerItem.cacheData mutableBytes];
-    if (_playerItem.seekByteOffset) {
+    if (_playerItem.seekRequested) {
       _playerItem.byteWriteIndex = _playerItem.seekByteOffset;
-      _playerItem.seekByteOffset = 0;
+      _playerItem.seekRequested = NO;
+      //[_audioQueue start];
     }
     readBytes += _playerItem.byteWriteIndex; // instance variable to move pointer
     (void)memcpy(bytes, readBytes, readLength);
     _playerItem.byteWriteIndex += readLength;
     if (_fileStream) {
+      //CDLog(BTDFLAG_AUDIO_PLAYER, @"---_playerItem.discontinuity %d", _playerItem.discontinuity);
       if (_playerItem.discontinuity) {
         [_fileStream parseBytes:bytes dataSize:readLength flags:kAudioFileStreamParseFlag_Discontinuity];
       } else {
@@ -427,7 +435,7 @@ void RunLoopSourcePerformRoutine (void *info) {
   [_url release];
   _url = nil;
   
-  CDLog(BTDFLAG_AUDIO_PLAYER, @"_runLoop:%d, _runLoopSource:%d", _runLoop, _runLoopSource);
+  //CDLog(BTDFLAG_AUDIO_PLAYER, @"_runLoop:%d, _runLoopSource:%d", _runLoop, _runLoopSource);
   if (_runLoop) {
     CFRunLoopRemoveSource(_runLoop, _runLoopSource, kCFRunLoopDefaultMode);
     CFRelease(_runLoopSource);
@@ -445,16 +453,16 @@ void RunLoopSourcePerformRoutine (void *info) {
 
 }
 
-- (float)playProgress {
+- (Float64)playProgress {
   float progress = -1;
   if (self.status == BTAudioPlayerStatusStop) {
     return progress;
   }
   AudioTimeStamp queueTime;
-  Boolean discontinuity = NULL;
+  Boolean discontinuity;
   
   OSStatus status = [_audioQueue getCurrentTime:&queueTime discontinuity:&discontinuity];
-  CDLog(BTDFLAG_AUDIO_PLAYER, @"discontinuity = %d", discontinuity);
+  //CDLog(BTDFLAG_AUDIO_PLAYER, @"discontinuity = %d", discontinuity);
   const OSStatus AudioQueueStopped = 0x73746F70; // 0x73746F70 is 'stop'
   if (status == AudioQueueStopped) {
     CVLog(BTDFLAG_AUDIO_PLAYER, @"AudioQueueStopped");
@@ -472,43 +480,8 @@ void RunLoopSourcePerformRoutine (void *info) {
   
 	return progress;
 }
-/*
-- (float)playProgress {
-  float progress = -1;
-  if (self.status == BTAudioPlayerStatusStop) {
-    return progress;
-  }
-  AudioTimeStamp queueTime;
-  Boolean discontinuity;
-  
-  OSStatus status = [_audioQueue getCurrentTime:&queueTime discontinuity:&discontinuity];
-  
-  const OSStatus AudioQueueStopped = 0x73746F70; // 0x73746F70 is 'stop'
-  if (status == AudioQueueStopped) {
-    CVLog(BTDFLAG_AUDIO_PLAYER, @"AudioQueueStopped");
-    progress = -2;
-  } else if (status) {
-    CVLog(BTDFLAG_AUDIO_PLAYER, @"status = %ld", status);
-    progress = -3;
-  } else {
-    progress = _fileStream.seekTime + queueTime.mSampleTime / _fileStream.sampleRate;
-    if (progress < 0.0) {
-      progress = 0.0;
-    }
-  }
-  //CDLog(BTDFLAG_AUDIO_PLAYER, @"progress = %.3f", progress);
 
-	return progress;
-}
-*/
-//
-// duration
-//
-// Calculates the duration of available audio from the bitRate and fileLength.
-//
-// returns the calculated duration in seconds.
-//
-- (float)duration {
+- (Float64)duration {
   return [_playerItem duration];
 }
 
