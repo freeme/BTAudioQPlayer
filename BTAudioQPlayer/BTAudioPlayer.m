@@ -106,8 +106,18 @@ void RunLoopSourcePerformRoutine (void *info) {
   if ([_playerItem calculatedBitRate] == 0.0 || _playerItem.expectedContentLength <= 0) {
 		return;
 	}
-  [_audioQueue pause];
-  [_audioQueue reset];
+//  [_audioQueue pause];
+//  [_audioQueue reset];
+  [_audioQueue unbind];
+  [_audioQueue bind];
+//  _audioQueue = [[BTAudioQueue alloc] initWithASBD:_playerItem.asbd packetBufferSize:_playerItem.packetBufferSize];
+//  if (_audioQueue == nil) {
+//    //TODO: 容错处理
+//    
+//  } else {
+//    _audioQueue.delegate = self;
+//    _playerItem.discontinuity = YES;
+//  }
   
   self.status = BTAudioPlayerStatusWaiting;
   _playerItem.seekRequested = YES;
@@ -229,17 +239,13 @@ void RunLoopSourcePerformRoutine (void *info) {
   if (_audioQueue == nil) {
     _playerItem.asbd = asbd;
     _playerItem.packetBufferSize = [_fileStream getPacketBufferSize];
-    _audioQueue = [[BTAudioQueue alloc] initWithASBD:asbd packetBufferSize:_playerItem.packetBufferSize];
-    if (_audioQueue == nil) {
-      //TODO: 容错处理
-      
-    } else {
-      _audioQueue.delegate = self;
-      _playerItem.discontinuity = YES;
-      _playerItem.bitRate = [_fileStream getBitRate];
-      _playerItem.dataOffset = [_fileStream getDataOffset];
-      _playerItem.fileFormat = [_fileStream getFileFormat];
-    }
+    _audioQueue = [[BTAudioQueue alloc] initWithDelegate:self];
+    [_audioQueue bind];
+
+    _playerItem.bitRate = [_fileStream getBitRate];
+    _playerItem.dataOffset = [_fileStream getDataOffset];
+    _playerItem.fileFormat = [_fileStream getFileFormat];
+    
 	}
 }
 
@@ -260,6 +266,11 @@ void RunLoopSourcePerformRoutine (void *info) {
 
 #pragma mark -
 #pragma mark AudioQueue Callback
+
+- (BTPlayerItem*)playerItemForAudioQueue:(BTAudioQueue *)audioQueue {
+  return _playerItem;
+}
+
 //Callback from AQClient thread
 - (void)audioQueue:(BTAudioQueue *)audioQueue isDoneWithBuffer:(AudioQueueBufferRef)bufferRef {
   //CDLog(BTDFLAG_AUDIO_QUEUE,@">>>");
@@ -278,7 +289,7 @@ void RunLoopSourcePerformRoutine (void *info) {
 - (void)audioQueuePlaybackIsComplete:(BTAudioQueue *)audioQueue {
   CDLog(BTDFLAG_AUDIO_QUEUE, @"<<<<<<<<<<<-->>>>>>>>>>>>");
   self.status = BTAudioPlayerStatusStop; //TODO: fix bug, bad access when play another music
-  
+  [_audioQueue unbind];
 //  _audioQueue.delegate = nil;
 //	[_audioQueue release];
 //  _audioQueue = nil;
@@ -322,24 +333,34 @@ void RunLoopSourcePerformRoutine (void *info) {
 //    if ([_audioQueue isEmpty]) {
 //      kAQWriteDataSzie = kAQDefaultBufSize * 16;
 //    }
-    UInt8 bytes[kAQWriteDataSzie];
-    NSUInteger readLength = 0;
-    readLength = ((availableDataLength >= kAQWriteDataSzie) ? kAQWriteDataSzie : availableDataLength);
-    uint8_t *readBytes = (uint8_t *)[_playerItem.cacheData mutableBytes];
     if (_playerItem.seekRequested) {
       _playerItem.byteWriteIndex = _playerItem.seekByteOffset;
       _playerItem.seekRequested = NO;
       //[_audioQueue start];
     }
-    readBytes += _playerItem.byteWriteIndex; // instance variable to move pointer
-    (void)memcpy(bytes, readBytes, readLength);
+
+    UInt8 bytes[kAQWriteDataSzie];
+    NSUInteger readLength = 0;
+    readLength = ((availableDataLength >= kAQWriteDataSzie) ? kAQWriteDataSzie : availableDataLength);
+    
+    NSData *readData = [NSData dataWithBytes:([_playerItem.cacheData mutableBytes] + _playerItem.byteWriteIndex) length:readLength];
+//    uint8_t *readBytes = (uint8_t *)[_playerItem.cacheData mutableBytes];
+
+//    readBytes += _playerItem.byteWriteIndex; // instance variable to move pointer
+//    (void)memcpy(bytes, readBytes, readLength);
+    
     _playerItem.byteWriteIndex += readLength;
     if (_fileStream) {
       //CDLog(BTDFLAG_AUDIO_PLAYER, @"---_playerItem.discontinuity %d", _playerItem.discontinuity);
+//      if (_playerItem.discontinuity) {
+//        [_fileStream parseBytes:bytes dataSize:readLength flags:kAudioFileStreamParseFlag_Discontinuity];
+//      } else {
+//        [_fileStream parseBytes:bytes dataSize:readLength flags:0];
+//      }
       if (_playerItem.discontinuity) {
-        [_fileStream parseBytes:bytes dataSize:readLength flags:kAudioFileStreamParseFlag_Discontinuity];
+        [_fileStream parseBytes:[readData bytes] dataSize:readLength flags:kAudioFileStreamParseFlag_Discontinuity];
       } else {
-        [_fileStream parseBytes:bytes dataSize:readLength flags:0];
+        [_fileStream parseBytes:[readData bytes] dataSize:readLength flags:0];
       }
     }
   }
@@ -383,6 +404,7 @@ void RunLoopSourcePerformRoutine (void *info) {
 - (void)startQueue {
   if (self.status == BTAudioPlayerStatusStop) {
 //    if (_audioQueue == nil) {
+    [_audioQueue bind];
       [_playerItem reset];
       self.status = BTAudioPlayerStatusWaiting;
       [self driveRunLoop];
@@ -447,7 +469,7 @@ void RunLoopSourcePerformRoutine (void *info) {
 	[_request release];
   _request = nil;
 
-  [_audioQueue stop];
+  [_audioQueue unbind];
 
   
   _fileStream.delegate = nil;

@@ -49,10 +49,13 @@ typedef NS_ENUM(NSInteger, BTAudioQueueStatus) {
   volatile Float32             _volume;
 }
 
-@property (nonatomic,assign) id<BTAudioQueueDelegate> delegate;
+//@property (nonatomic,assign) id<BTAudioQueueDelegate> delegate;
 @property (nonatomic, readonly) AudioQueueRef audioQueue;
 @property (nonatomic) BTAudioQueueStatus status;
 @property unsigned short bufCountInQueue;
+
+- (id)initWithDelegate:(id<BTAudioQueueDelegate>) delegate;
+
 - (id)initWithASBD:(AudioStreamBasicDescription)asbd packetBufferSize:(NSUInteger)packetBufferSize;
 
 /*
@@ -61,38 +64,20 @@ typedef NS_ENUM(NSInteger, BTAudioQueueStatus) {
  */
 - (OSStatus)setMagicCookie:(NSData *)magicCookie;
 
-/*
- * Starts playback of the audio queue.  See Core Audio documentation
- * for AudioQueueStart for possible return values.
- */
+//Bind & unbind需要成对出现，unbind后，再start需要先bind
+- (void)bind;
+- (OSStatus)unbind;
 - (OSStatus)start;
-
-/*
- * Pauses playback of the audio queue.  See Core Audio documentation
- * for AudioQueuePause for possible return values.
- */
 - (OSStatus)pause;
-
-
-- (void)enqueueBuffer:(AudioQueueBufferRef)bufferRef;
-/*
- * Enqueues a buffer for future playback.  See Core Audio documentation for 
- * AudioQueueEnqueueBuffer for possible return values;
- */
-//- (OSStatus)enqueueBuffer:(AudioQueueBufferRef)bufferRef;
-//- (OSStatus)enqueueBuffer:(AudioQueueBufferRef)bufferRef inNumPacketDescs:(UInt32)inNumPacketDescs inPacketDescs:(const AudioStreamPacketDescription *) inPacketDescs;;
-
-/*
- * Notifies this AudioQueue that no more audio will be queued, and that
- * the AudioQueue should stop once the last currently queued buffer 
- * is complete. See Core Audio documentation for AudioQueueFlush and
- * AudioStop for possible return values;
- */
 - (OSStatus)endOfStream;
 
-- (OSStatus)stop;
+
 
 - (OSStatus)reset;
+
+- (void)enqueueBuffer:(AudioQueueBufferRef)bufferRef;
+
+
 - (OSStatus)getCurrentTime:(AudioTimeStamp *)outTimeStamp discontinuity:(Boolean *)outTimelineDiscontinuity;
 - (BOOL)isStopping;
 - (BOOL)isFull;
@@ -103,9 +88,10 @@ typedef NS_ENUM(NSInteger, BTAudioQueueStatus) {
 
 @end
 
-
-
+@class BTPlayerItem;
 @protocol BTAudioQueueDelegate<NSObject>
+
+- (BTPlayerItem*)playerItemForAudioQueue:(BTAudioQueue *)audioQueue;
 /*
  * Notifies the delegate that the AudioQueue is done enqueueing a
  * buffer and the buffer may now be released.
@@ -124,4 +110,5 @@ typedef NS_ENUM(NSInteger, BTAudioQueueStatus) {
 - (void)audioQueuePlaybackIsComplete:(BTAudioQueue *)audioQueue;
 
 - (void)audioQueueIsFull:(BTAudioQueue *)audioQueue;
+
 @end

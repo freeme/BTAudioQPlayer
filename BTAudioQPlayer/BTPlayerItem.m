@@ -36,6 +36,7 @@
     self.url = URL;
     _cacheData = [[NSMutableData alloc] initWithCapacity:1024];
     _readBytes = [_cacheData mutableBytes];
+    _discontinuity = YES;
   }
   return self;
 }
