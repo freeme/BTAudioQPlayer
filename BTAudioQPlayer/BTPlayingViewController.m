@@ -139,10 +139,12 @@ static BTPlayingViewController *instance;
   }
 }
 - (IBAction) fastForwardAction;{
-  
+  Float32 seekTime = _playProgressBar.value * [_player duration] + 5;
+  [_player seekToTime:seekTime];
 }
 - (IBAction) backwardAction;{
-  
+  Float32 seekTime = _playProgressBar.value * [_player duration] - 5;
+  [_player seekToTime:seekTime];
 }
 - (IBAction) nextAction;{
   
