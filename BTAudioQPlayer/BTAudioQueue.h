@@ -79,7 +79,7 @@ typedef NS_ENUM(NSInteger, BTAudioQueueStatus) {
 
 
 - (OSStatus)getCurrentTime:(AudioTimeStamp *)outTimeStamp discontinuity:(Boolean *)outTimelineDiscontinuity;
-- (BOOL)isStopping;
+//- (BOOL)isStopping;
 - (BOOL)isFull;
 - (BOOL)isEmpty;
 

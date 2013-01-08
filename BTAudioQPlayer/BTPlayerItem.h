@@ -42,6 +42,7 @@
 
 @property (nonatomic) volatile NSUInteger  seekByteOffset;
 @property (nonatomic) Float64     seekTime;
+@property (nonatomic) Float64     playProgress;
 @property (nonatomic, readonly) Float64     packetDuration;
 @property (nonatomic, readonly) Float64     sampleRate;
 @property (nonatomic, readonly) BOOL        isFormatVBR;

@@ -24,6 +24,12 @@ static BTPlayingViewController *instance;
   return instance;
 }
 
+- (void)dealloc {
+  [self clearTimer];
+  
+  [super dealloc];
+}
+
 - (id)init
 {
   self = [super init];
@@ -123,11 +129,23 @@ static BTPlayingViewController *instance;
 - (void)setUpdateTimer {
   progressUpdateTimer =
   [NSTimer
-   scheduledTimerWithTimeInterval:1
+   scheduledTimerWithTimeInterval:0.1
    target:self
    selector:@selector(updateProgress:)
    userInfo:nil
    repeats:YES];
+  
+//  progressUpdateTimer = [[NSTimer alloc] initWithFireDate:[NSDate date] interval:1 target:self selector:@selector(updateProgress:) userInfo:nil repeats:YES];
+//  [[NSRunLoop currentRunLoop] addTimer:progressUpdateTimer forMode:NSDefaultRunLoopMode];
+}
+
+- (void)clearTimer {
+  if (progressUpdateTimer) {
+    [progressUpdateTimer invalidate];
+    //[progressUpdateTimer release];
+    progressUpdateTimer = nil;
+  }
+
 }
 
 - (IBAction) playAndPauseAction {
@@ -161,16 +179,16 @@ static BTPlayingViewController *instance;
 
 }
 - (IBAction) progressWillChangedAction;{
-  [progressUpdateTimer invalidate];
-  progressUpdateTimer = nil;
+  [self clearTimer];
 }
 - (IBAction) progressChangedAction;{
 
 }
 - (IBAction) progressDidChangedAction;{
-  [self setUpdateTimer];
+  
   Float32 seekTime = _playProgressBar.value * [_player duration];
   [_player seekToTime:seekTime];
+  [self setUpdateTimer];
 }
 
 - (IBAction) progressCancelChangedAction {
@@ -250,7 +268,7 @@ static BTPlayingViewController *instance;
     [_playProgressBar setEnabled:YES];
     [_playProgressBar setValue:progress / duration];
   } else {
-    [_playProgressBar setEnabled:NO];
+    //[_playProgressBar setEnabled:NO];
   }
 //			[_progressBar setEnabled:YES];
 //			[_progressBar setValue:progress / duration];

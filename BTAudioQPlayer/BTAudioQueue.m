@@ -33,34 +33,32 @@ void audioQueueOutputCallback (void *inUserData, AudioQueueRef inAQ, AudioQueueB
 
 - (void)bufferDidEmpty:(AudioQueueBufferRef)bufferRef {
   
-//  unsigned int bufIndex = -1;
-//	for (unsigned int i = 0; i < kNumAQBufs; ++i) {
-//		if (bufferRef == _buffers[i]) {
-//			bufIndex = i;
-//			break;
-//    }
-//  }
-//
-//	if (bufIndex == -1) {
-//		//[self failWithErrorCode:AS_AUDIO_QUEUE_BUFFER_MISMATCH];
-//    if (_condition) {
-//      [_condition lock];
-//      [_condition broadcast];
-//      [_condition unlock];
-//    }
-//  } else {
-    if (_audioQueue&&_condition) {
-      [_condition lock];
-      //_inuse[bufIndex] = NO;
-      _bufCountInQueue--;
-      CDLog(BTDFLAG_AUDIO_QUEUE,@"_bufCountInQueue-- = %d bufferRef:%d", _bufCountInQueue,bufferRef);
-      [_condition broadcast];
-      [_condition unlock];
+  unsigned int bufIndex = -1;
+	for (unsigned int i = 0; i < kNumAQBufs; ++i) {
+		if (bufferRef == _buffers[i]) {
+			bufIndex = i;
+			break;
     }
+  }
+
+	if (bufIndex == -1) {
+		//[self failWithErrorCode:AS_AUDIO_QUEUE_BUFFER_MISMATCH];
+    [_condition lock];
+    [_condition broadcast];
+    [_condition unlock];
+    
+  } else {
+    [_condition lock];
+    _inuse[bufIndex] = NO;
+    _bufCountInQueue--;
+    CDLog(BTDFLAG_AUDIO_QUEUE,@"_bufCountInQueue-- = %d bufferRef:%d", _bufCountInQueue,bufferRef);
+    [_condition broadcast];
+    [_condition unlock];
+    
     if (_delegate && [_delegate respondsToSelector:@selector(audioQueue:isDoneWithBuffer:)]) {
       [_delegate audioQueue:self isDoneWithBuffer:bufferRef];
     }
-//  }
+  }
 
 }
 
@@ -136,7 +134,7 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
       OSStatus status = AudioQueueNewOutput(&asbd,
                                             audioQueueOutputCallback,
                                             self,
-                                            NULL, //设置Null,AudioQueue将在自己的内部线程(AQClient)中运行
+                                            CFRunLoopGetCurrent(), //设置Null,AudioQueue将在自己的内部线程(AQClient)中运行
                                             NULL,
                                             0,
                                             &_audioQueue);
@@ -161,9 +159,7 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
       
       AudioQueueSetParameter (_audioQueue, kAudioQueueParam_Volume, 0.5);
       _currentFillBufferIndex = 0;
-      [_condition lock];
       _bufCountInQueue = 0;
-      [_condition unlock];
     }
   }
 }
@@ -204,8 +200,15 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
   CDLog(BTDFLAG_AUDIO_QUEUE, @" >>>>>>>>>> endOfStream");
   OSStatus status = noErr;
   if (_audioQueue) {
-    _queueStatus = BTAudioQueueStatusStopping;
-    status = AudioQueueFlush(_audioQueue);
+    if (_queueStatus == BTAudioQueueStatusStopping) {// 这里有问题，availableDataLength = 0时， writeData可能不会再进来了
+      if ([self isEmpty]) {
+        [self pause];
+        [_delegate audioQueuePlaybackIsComplete:self];
+      }
+    } else {
+      _queueStatus = BTAudioQueueStatusStopping;
+      status = AudioQueueFlush(_audioQueue);
+    }
   }
 	return status;
 }
@@ -248,9 +251,9 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
   return status;
 }
 
-- (BOOL)isStopping {
-  return (_queueStatus == BTAudioQueueStatusStopping);
-}
+//- (BOOL)isStopping {
+//  return (_queueStatus == BTAudioQueueStatusStopping);
+//}
 
 - (BOOL)isFull {
   return (_bufCountInQueue == kNumAQBufs);
@@ -270,7 +273,7 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
   }
   if (packetDescs) { //the following code assumes we're streaming VBR data
     //AudioQueueBufferRef fillBuf = NULL;
-		for (int i = 0; i < packetCount && ![self isStopping]; ++i) { //TODO: 有托动操作时，这里的for需要及时结束，这里可能是会造成混音的地方
+		for (int i = 0; i < packetCount && _audioQueue; ++i) { //TODO: 有托动操作时，这里的for需要及时结束，这里可能是会造成混音的地方
       //TODO: for 是否放在外面会更好？
 			SInt64 packetOffset = packetDescs[i].mStartOffset;
 			SInt64 packetSize   = packetDescs[i].mDataByteSize;
@@ -299,7 +302,7 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
       
       // If the audio was terminated while waiting for a buffer, then
       // exit.
-      if ([self isStopping]) {
+      if (_audioQueue == NULL) {
         CDLog(BTDFLAG_AUDIO_QUEUE, @"-------------------------1");
         return;
       }
@@ -358,15 +361,15 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
   //  if ([self isFinishing]){
   //    return;
   //  }
-  OSStatus err;
-  //_inuse[_currentFillBufferIndex] = YES;
+  OSStatus status;
+  _inuse[_currentFillBufferIndex] = YES;
   _bufCountInQueue++;
   //CDLog(BTDFLAG_AUDIO_QUEUE,@"_bufCountInQueue++ = %d", _bufCountInQueue);
   
   if (_packetsFilled) {
-    err = AudioQueueEnqueueBuffer(_audioQueue, filledBuffer, _packetsFilled, _packetDescs);
+    status = AudioQueueEnqueueBuffer(_audioQueue, filledBuffer, _packetsFilled, _packetDescs);
   } else {
-    err = AudioQueueEnqueueBuffer(_audioQueue, filledBuffer, 0, NULL);
+    status = AudioQueueEnqueueBuffer(_audioQueue, filledBuffer, 0, NULL);
   }
   [self moveToNextEmptyBuffer];
   //  if (err) {
@@ -387,7 +390,7 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
 	// wait until next buffer is not in use
   [_condition lock];
   
-	while ([self isFull]) {//_inuse[_currentFillBufferIndex])  {self.status == BTAudioQueueStatusPaused || 
+	while (_inuse[_currentFillBufferIndex]) {//_inuse[_currentFillBufferIndex])  {self.status == BTAudioQueueStatusPaused || 
     if (self.status == BTAudioQueueStatusStopping ||self.status == BTAudioQueueStatusStopped) {
       break;
     }

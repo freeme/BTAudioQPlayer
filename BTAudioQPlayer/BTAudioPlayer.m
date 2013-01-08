@@ -40,7 +40,8 @@ void RunLoopSourcePerformRoutine (void *info) {
   if (self) {
     _delegate = aDelegate;
     _url = [url retain];
-    
+    _request = [[BTAudioRequest alloc] initRequestWithURL:_url delegate:self];
+    [_request start];
   }
 	return self;
 }
@@ -55,8 +56,7 @@ void RunLoopSourcePerformRoutine (void *info) {
   _runLoopSource = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &context);
   CFRunLoopAddSource(_runLoop, _runLoopSource, kCFRunLoopDefaultMode);
 
-  _request = [[BTAudioRequest alloc] initRequestWithURL:_url delegate:self];
-  [_request start];
+
   
   //_audioQueue = [[BTAudioQueue alloc] initQueueWithDelegate:self];
   _fileStream = [[BTAudioFileStream alloc] initFileStreamWithDelegate:self];
@@ -132,8 +132,8 @@ void RunLoopSourcePerformRoutine (void *info) {
 	// reality, this may still seek too far if the file has a long trailer).
 	//
   
-	if (_playerItem.seekByteOffset > [_playerItem.cacheData length] - 2 * _playerItem.packetBufferSize) {
-		_playerItem.seekByteOffset =[_playerItem.cacheData length] - 2 * _playerItem.packetBufferSize;
+	if (_playerItem.seekByteOffset > [_playerItem.cacheData length] - 20 * _playerItem.packetBufferSize) {
+		_playerItem.seekByteOffset =[_playerItem.cacheData length] - 20 * _playerItem.packetBufferSize;
 	}
 	
 	//
@@ -308,12 +308,12 @@ void RunLoopSourcePerformRoutine (void *info) {
   if ([_audioQueue isFull]||[_thread isCancelled]) {
     return;
   }
-  //CDLog(BTDFLAG_AUDIO_PLAYER, @"------bufCountInQueue = %d", _audioQueue.bufCountInQueue);
   NSUInteger availableDataLength = [_playerItem availableDataLength];
+  CDLog(BTDFLAG_AUDIO_PLAYER, @"<<<<bufCountInQueue = %d availableData = %d _playStatus = %d", _audioQueue.bufCountInQueue, availableDataLength, _playStatus);
   //可用数据长度为0了，播放器的状态还在播放
   if (availableDataLength == 0 && (_playStatus == BTAudioPlayerStatusPlaying)) {
     if ([_playerItem isDataComplete]) { //所有数据都下载完了，并且可用数据长度为0，说明数据都已经写到Buffer里了
-      if (_audioQueue.status == BTAudioQueueStatusStopping) {
+      if (_audioQueue.status == BTAudioQueueStatusStopping) { // 这里有问题，availableDataLength = 0时， writeData可能不会再进来了
         if ([_audioQueue isEmpty]) {
           [_audioQueue pause];
           [self audioQueuePlaybackIsComplete:_audioQueue];
@@ -405,9 +405,9 @@ void RunLoopSourcePerformRoutine (void *info) {
   if (self.status == BTAudioPlayerStatusStop) {
 //    if (_audioQueue == nil) {
     [_audioQueue bind];
-      [_playerItem reset];
-      self.status = BTAudioPlayerStatusWaiting;
-      [self driveRunLoop];
+    [_playerItem reset];
+    self.status = BTAudioPlayerStatusWaiting;
+    [self driveRunLoop];
 //    }
   } else {
     [_audioQueue start];
@@ -498,31 +498,31 @@ void RunLoopSourcePerformRoutine (void *info) {
 }
 
 - (Float64)playProgress {
-  float progress = -1;
-  if (self.status == BTAudioPlayerStatusStop) {
-    return progress;
-  }
-  AudioTimeStamp queueTime;
-  Boolean discontinuity;
   
-  OSStatus status = [_audioQueue getCurrentTime:&queueTime discontinuity:&discontinuity];
-  //CDLog(BTDFLAG_AUDIO_PLAYER, @"discontinuity = %d", discontinuity);
-  const OSStatus AudioQueueStopped = 0x73746F70; // 0x73746F70 is 'stop'
-  if (status == AudioQueueStopped) {
-    CVLog(BTDFLAG_AUDIO_PLAYER, @"AudioQueueStopped");
-    progress = -2;
-  } else if (status) {
-    CVLog(BTDFLAG_AUDIO_PLAYER, @"status = %ld", status);
-    progress = -3;
-  } else {
-    progress = _playerItem.seekTime + queueTime.mSampleTime / _playerItem.sampleRate;
-    if (progress < 0.0) {
-      progress = 0.0;
+  if (_playStatus == BTAudioPlayerStatusPlaying) {
+    Float64 progress = 0.0;
+    AudioTimeStamp queueTime;
+    Boolean discontinuity;
+    
+    OSStatus status = [_audioQueue getCurrentTime:&queueTime discontinuity:&discontinuity];
+    //CDLog(BTDFLAG_AUDIO_PLAYER, @"discontinuity = %d", discontinuity);
+    const OSStatus AudioQueueStopped = 0x73746F70; // 0x73746F70 is 'stop'
+    if (status == AudioQueueStopped) {
+      CVLog(BTDFLAG_AUDIO_PLAYER, @"AudioQueueStopped");
+      progress = -2;
+    } else if (status) {
+      CVLog(BTDFLAG_AUDIO_PLAYER, @"status = %ld", status);
+      progress = -3;
+    } else {
+      progress = _playerItem.seekTime + queueTime.mSampleTime / _playerItem.sampleRate;
+      if (progress < 0.0) {
+        progress = 0.0;
+      }
+      _playerItem.playProgress = progress;
     }
   }
+  return _playerItem.playProgress;
   //CDLog(BTDFLAG_AUDIO_PLAYER, @"progress = %.3f", progress);
-  
-	return progress;
 }
 
 - (Float64)duration {
