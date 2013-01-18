@@ -134,7 +134,7 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
       OSStatus status = AudioQueueNewOutput(&asbd,
                                             audioQueueOutputCallback,
                                             self,
-                                            CFRunLoopGetCurrent(), //设置Null,AudioQueue将在自己的内部线程(AQClient)中运行
+                                            NULL, //设置Null,AudioQueue将在自己的内部线程(AQClient)中运行
                                             NULL,
                                             0,
                                             &_audioQueue);

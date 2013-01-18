@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3F3AFA1616A8E8FB0050E794 /* 01-002.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 3F3AFA1516A8E8FB0050E794 /* 01-002.mp3 */; };
 		3F9F59E8163E9FB400CD0D55 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 3F9F59E7163E9FB400CD0D55 /* README.md */; };
 		3FC0C73D163FF2AF0042E644 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3FC0C73C163FF2AF0042E644 /* AVFoundation.framework */; };
 		3FC749881640B1CD004C1C30 /* BTPlayerItem.m in Sources */ = {isa = PBXBuildFile; fileRef = 3FC749871640B1CD004C1C30 /* BTPlayerItem.m */; };
@@ -34,6 +35,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		3F3AFA1516A8E8FB0050E794 /* 01-002.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "01-002.mp3"; sourceTree = "<group>"; };
 		3F9F59E7163E9FB400CD0D55 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.md; sourceTree = "<group>"; };
 		3FC0C73C163FF2AF0042E644 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		3FC749861640B1CD004C1C30 /* BTPlayerItem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BTPlayerItem.h; sourceTree = "<group>"; };
@@ -145,6 +147,7 @@
 		4E70AA2916215F2700875771 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				3F3AFA1516A8E8FB0050E794 /* 01-002.mp3 */,
 				4E172DB2162F00F6009BD8C5 /* lpzd.mp3 */,
 				4E70AA2A16215F2700875771 /* BTAudioQPlayer-Info.plist */,
 				4E70AA2B16215F2700875771 /* InfoPlist.strings */,
@@ -245,6 +248,7 @@
 				4E70AA4F162161D500875771 /* BTPlayingViewController.xib in Resources */,
 				4E172DB3162F00F6009BD8C5 /* lpzd.mp3 in Resources */,
 				3F9F59E8163E9FB400CD0D55 /* README.md in Resources */,
+				3F3AFA1616A8E8FB0050E794 /* 01-002.mp3 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

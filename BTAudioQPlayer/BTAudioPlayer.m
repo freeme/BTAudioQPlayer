@@ -40,8 +40,7 @@ void RunLoopSourcePerformRoutine (void *info) {
   if (self) {
     _delegate = aDelegate;
     _url = [url retain];
-    _request = [[BTAudioRequest alloc] initRequestWithURL:_url delegate:self];
-    [_request start];
+    
   }
 	return self;
 }
@@ -49,7 +48,8 @@ void RunLoopSourcePerformRoutine (void *info) {
 - (void)main {
   CDLog(BTDFLAG_DEFAULT,@"");
   _playerItem = [[BTPlayerItem alloc] initWithURL:_url];
-  
+  _request = [[BTAudioRequest alloc] initRequestWithURL:_url delegate:self];
+  [_request start];
   _runLoop = CFRunLoopGetCurrent();
   
   CFRunLoopSourceContext context = {0, self, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &RunLoopSourcePerformRoutine};

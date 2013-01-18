@@ -32,8 +32,10 @@
     _musicList = [[NSMutableArray alloc] initWithCapacity:16];
     
     [self addTestMusicWithTitle:@"老婆最大" link:@"http://www.ycsky100.com/blog/Qq1274076003/upload/2011112410110590.mp3"];
-    NSURL *url = [[NSBundle mainBundle] URLForResource:@"lpzd" withExtension:@"mp3"];
-    [self addTestMusicWithTitle:@"老婆最大(本地资源)" link:[url absoluteString]];
+    NSURL *url0 = [[NSBundle mainBundle] URLForResource:@"lpzd" withExtension:@"mp3"];
+    [self addTestMusicWithTitle:@"老婆最大(本地资源)" link:[url0 absoluteString]];
+    NSURL *url1 = [[NSBundle mainBundle] URLForResource:@"01-002" withExtension:@"mp3"];
+    [self addTestMusicWithTitle:@"01-002(本地资源)" link:[url1 absoluteString]];
     [self addTestMusicWithTitle:@"伤不起" link:@"http://mul1.tximg.cn/music/group/bbs/mp3/13/110830/1314711786255.mp3"];
     [self addTestMusicWithTitle:@"序曲" link:@"http://www.mglmusic.com/geqv/zuhegeqv/fenghuangchuanqi/01.mp3"];
     [self addTestMusicWithTitle:@"等一分钟" link:@"http://xkpt.txsyxx.com/uploadresource/netstudyresource/2011920130152.mp3"];
