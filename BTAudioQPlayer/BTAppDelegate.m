@@ -7,7 +7,7 @@
 //
 
 #import "BTAppDelegate.h"
-
+#import "BTPlayingViewController.h"
 
 @implementation BTAppDelegate
 
@@ -25,10 +25,11 @@
   // Override point for customization after application launch.
   self.window.backgroundColor = [UIColor whiteColor];
   
-  _rootController = [[BTRootViewController alloc] initWithStyle:UITableViewStylePlain];
+  _rootController = [[BTRootViewController alloc] init];
   _navController = [[UINavigationController alloc] initWithRootViewController:_rootController];
   
   [self.window addSubview:_navController.view];
+
   [self.window makeKeyAndVisible];
   return YES;
 }

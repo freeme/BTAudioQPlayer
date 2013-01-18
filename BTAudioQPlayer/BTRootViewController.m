@@ -21,9 +21,9 @@
   [super dealloc];
 }
 
-- (id)initWithStyle:(UITableViewStyle)style
+- (id)init
 {
-  self = [super initWithStyle:style];
+  self = [super init];
 
   if (self) {
     
@@ -60,7 +60,20 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
+  
+  BTPlayingViewController *playerController = [BTPlayingViewController sharePlayerController];
 
+  CGRect tableFrame = self.view.bounds;
+  CGRect playViewFrame = playerController.view.bounds;
+  tableFrame.size.height -= (playViewFrame.size.height + 44);
+  playViewFrame.origin.y = tableFrame.size.height + 44;
+  playerController.view.frame = playViewFrame;
+  UITableView *tableView = [[UITableView alloc] initWithFrame:tableFrame style:UITableViewStylePlain];
+  tableView.dataSource = self;
+  tableView.delegate = self;
+  [self.view addSubview:tableView];
+  [self.view addSubview:playerController.view];
+  
     // Uncomment the following line to preserve selection between presentations.
     // self.clearsSelectionOnViewWillAppear = NO;
  
@@ -93,7 +106,7 @@
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
   static NSString *identifier = @"Cell";
-  UITableViewCell *cell = [self.tableView dequeueReusableCellWithIdentifier:identifier];
+  UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier];
     
     // Configure the cell...
   if (cell == nil) {
@@ -151,7 +164,7 @@
   // ...
   // Pass the selected object to the new view controller.
   
-  [self.navigationController pushViewController:playerController animated:YES];
+  //[self.navigationController pushViewController:playerController animated:YES];
   [playerController playWithIndex:indexPath.row inList:_musicList];
 }
 

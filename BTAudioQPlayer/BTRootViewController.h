@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 
-@interface BTRootViewController : UITableViewController {
+@interface BTRootViewController : UIViewController<UITableViewDataSource,UITableViewDelegate> {
     NSMutableArray *_musicList;
 }
 

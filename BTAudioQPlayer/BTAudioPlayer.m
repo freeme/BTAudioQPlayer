@@ -108,6 +108,9 @@ void RunLoopSourcePerformRoutine (void *info) {
   if ([_playerItem calculatedBitRate] == 0.0 || _playerItem.expectedContentLength <= 0) {
 		return;
 	}
+  if (nSeekTime > [_playerItem duration]) {
+    nSeekTime = [_playerItem duration];
+  }
 //  [_audioQueue pause];
 //  [_audioQueue reset];
   [_audioQueue unbind];
