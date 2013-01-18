@@ -128,7 +128,10 @@ typedef NS_ENUM(NSInteger, BTAudioPlayerStatus) {
 @property (nonatomic) BOOL paused;
 @property (readonly) BTAudioPlayerStatus status;
 
+- (id)initPlayerWithDelegate:(id<BTAudioPlayerDelegate>) aDelegate;
 - (id)initPlayerWithURL:(NSURL *)url delegate:(id<BTAudioPlayerDelegate>) aDelegate;
+
+- (void)play:(NSURL*)url;
 
 - (void)start;
 

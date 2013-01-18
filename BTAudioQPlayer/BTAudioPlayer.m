@@ -35,6 +35,14 @@ void RunLoopSourcePerformRoutine (void *info) {
 	[super dealloc];
 }
 
+- (id)initPlayerWithDelegate:(id<BTAudioPlayerDelegate>) aDelegate {
+	self = [super init];
+  if (self) {
+    _delegate = aDelegate;
+  }
+	return self;
+}
+
 - (id)initPlayerWithURL:(NSURL *)url delegate:(id<BTAudioPlayerDelegate>) aDelegate {
 	self = [super init];
   if (self) {
@@ -44,6 +52,19 @@ void RunLoopSourcePerformRoutine (void *info) {
   }
 	return self;
 }
+
+- (void)play:(NSURL*)url {
+  if (url && _url != url) {
+    [_url release];
+    _url = [url retain];
+    [_playerItem release];
+    _playerItem = nil;
+    _playerItem = [[BTPlayerItem alloc] initWithURL:_url];
+    _request = [[BTAudioRequest alloc] initRequestWithURL:_url delegate:self];
+    [_request start];
+  }
+}
+ 
 
 - (void)main {
   CDLog(BTDFLAG_DEFAULT,@"");
