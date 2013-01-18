@@ -391,9 +391,9 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
   [_condition lock];
   
 	while (_inuse[_currentFillBufferIndex]) {//_inuse[_currentFillBufferIndex])  {self.status == BTAudioQueueStatusPaused || 
-    if (self.status == BTAudioQueueStatusStopping ||self.status == BTAudioQueueStatusStopped) {
-      break;
-    }
+//    if (self.status == BTAudioQueueStatusStopping ||self.status == BTAudioQueueStatusStopped || self.status == BTAudioQueueStatusPaused) {
+//      break;
+//    }
     CVLog(BTDFLAG_AUDIO_QUEUE,@"[_condition       wait");
     [_condition wait];
   }

@@ -63,6 +63,8 @@ void RunLoopSourcePerformRoutine (void *info) {
   [_fileStream open];
   self.status = BTAudioPlayerStatusStop;
   
+  heartbeatTimer = [NSTimer scheduledTimerWithTimeInterval:0.25 target:self selector:@selector(writeData) userInfo:nil repeats:YES];
+  
   while (_thread && ![_thread isCancelled]) {
 
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -181,6 +183,7 @@ void RunLoopSourcePerformRoutine (void *info) {
 #pragma mark -
 #pragma mark RunLoop Source
 - (void) driveRunLoop {
+  return;
   //CDLog(BTDFLAG_AUDIO_PLAYER, @" *************** ");
   CFRunLoopSourceSignal(_runLoopSource);
   CFRunLoopWakeUp(_runLoop);
@@ -305,6 +308,9 @@ void RunLoopSourcePerformRoutine (void *info) {
 #pragma mark Drive Data
 
 - (void)writeData {
+  if (self.status == BTAudioQueueStatusStopping ||self.status == BTAudioQueueStatusStopped || self.status == BTAudioQueueStatusPaused) {
+    return;
+  }
   if ([_audioQueue isFull]||[_thread isCancelled]) {
     return;
   }

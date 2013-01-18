@@ -122,6 +122,7 @@ typedef NS_ENUM(NSInteger, BTAudioPlayerStatus) {
 //  double                              seekTime;
 //	BOOL                                seekWasRequested;
 //	double                              requestedSeekTime;
+  NSTimer                   *heartbeatTimer;
 }
 
 @property (nonatomic) BOOL paused;
