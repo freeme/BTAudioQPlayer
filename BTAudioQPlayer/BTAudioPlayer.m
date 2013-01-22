@@ -99,6 +99,7 @@ void RunLoopSourceSeek (void *info) {
 }
 
 - (void)_playInternal {
+  NSAssert([[NSThread currentThread].name isEqualToString:@"INTH"],nil);
   CDLog(BTDFLAG_DEFAULT,@"");
   [_audioQueue unbind];
   [_audioQueue release];
@@ -205,6 +206,7 @@ void RunLoopSourceSeek (void *info) {
 //
 //- (void) internalSeekToTime:(NSNumber*)newSeekTime {
 - (void) _seekInternal {
+  NSAssert([[NSThread currentThread].name isEqualToString:@"INTH"],nil);
   CDLog(BTDFLAG_AUDIO_PLAYER, @"");
   Float64 nSeekTime = requestedSeekTime;
   if ([_playerItem calculatedBitRate] == 0.0 || _playerItem.expectedContentLength <= 0) {
@@ -308,17 +310,20 @@ void RunLoopSourceSeek (void *info) {
 #pragma mark -
 #pragma mark BTAudioRequestDelegate
 - (void)audioRequestDidStart:(BTAudioRequest *)request {
+  NSAssert([[NSThread currentThread].name isEqualToString:@"INTH"],nil);
   self.status = BTAudioPlayerStatusWaiting;
   CILog(BTDFLAG_NETWORK, @"-----------------");
 }
 
 - (void)audioRequestDidConnectOK:(BTAudioRequest *)request contentLength:(NSInteger)contentLength {
+  NSAssert([[NSThread currentThread].name isEqualToString:@"INTH"],nil);
   CILog(BTDFLAG_NETWORK, @"statusCode = 200");
   self.status = BTAudioPlayerStatusWaiting;
   _playerItem.expectedContentLength = contentLength;
 }
 
 - (void)audioRequest:(BTAudioRequest *)request didReceiveData:(NSData *)data {
+  NSAssert([[NSThread currentThread].name isEqualToString:@"INTH"],nil);
   //CDLog(BTDFLAG_NETWORK, @"data length = %d", [data length]);
   [_playerItem appendData:data];
   [self driveRunLoop];
@@ -326,6 +331,7 @@ void RunLoopSourceSeek (void *info) {
 }
 
 - (void)audioRequest:(BTAudioRequest *)request downloadProgress:(float)progress {
+  NSAssert([[NSThread currentThread].name isEqualToString:@"INTH"],nil);
   CVLog(BTDFLAG_NETWORK ,@"progress = %.2f", progress);
   if (_delegate && [_delegate respondsToSelector:@selector(audioPlayer:downloadProgress:)]) {
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -335,6 +341,7 @@ void RunLoopSourceSeek (void *info) {
 }
 
 - (void)audioRequestDidFinish:(BTAudioRequest *)request {
+  NSAssert([[NSThread currentThread].name isEqualToString:@"INTH"],nil);
   CILog(BTDFLAG_NETWORK, @"--player status = %d",_playStatus);
 //	if (!audioIsReadyToPlay) {
 //		[self error];
@@ -342,6 +349,7 @@ void RunLoopSourceSeek (void *info) {
 }
 
 - (void)audioRequest:(BTAudioRequest *)request didFailWithError:(NSError*)error {
+  NSAssert([[NSThread currentThread].name isEqualToString:@"INTH"],nil);
   CELog(BTDFLAG_NETWORK, @"BTAudioRequest didFailWithError(%i)-%@:%@", error.code,[error localizedDescription],[[error userInfo] objectForKey:NSURLErrorFailingURLStringErrorKey]);
   dispatch_async(dispatch_get_main_queue(), ^{
     //TODO: 错误处理
@@ -350,11 +358,13 @@ void RunLoopSourceSeek (void *info) {
 #pragma mark -
 
 - (void)audioFileStream:(BTAudioFileStream *)stream foundMagicCookie:(NSData *)cookie {
+  NSAssert([[NSThread currentThread].name isEqualToString:@"INTH"],nil);
 	// if an error happens here, it may be recoverable so we let it slide...
 	[_audioQueue setMagicCookie:cookie];
 }
 
 - (void)audioFileStream:(BTAudioFileStream *)stream isReadyToProducePacketsWithASBD:(AudioStreamBasicDescription)asbd {
+  NSAssert([[NSThread currentThread].name isEqualToString:@"INTH"],nil);
   if (_audioQueue == nil) {
     _playerItem.asbd = asbd;
     _playerItem.packetBufferSize = [_fileStream getPacketBufferSize];
@@ -370,6 +380,7 @@ void RunLoopSourceSeek (void *info) {
 
 
 - (void)audioFileStream:(BTAudioFileStream *)stream callBackWithByteCount:(UInt32)byteCount packetCount:(UInt32)packetCount data:(const void *)inputData packetDescs:(AudioStreamPacketDescription *)packetDescs {
+  NSAssert([[NSThread currentThread].name isEqualToString:@"INTH"],nil);
   if (_playerItem.discontinuity) {
     _playerItem.discontinuity = NO;
   }
@@ -387,24 +398,26 @@ void RunLoopSourceSeek (void *info) {
 #pragma mark AudioQueue Callback
 
 - (BTPlayerItem*)playerItemForAudioQueue:(BTAudioQueue *)audioQueue {
+  NSAssert([[NSThread currentThread].name isEqualToString:@"INTH"],nil);
   return _playerItem;
 }
 
-//Callback from AQClient thread
+//Callback from AQClient thread -> change to Main thread
 - (void)audioQueue:(BTAudioQueue *)audioQueue isDoneWithBuffer:(AudioQueueBufferRef)bufferRef {
   //CDLog(BTDFLAG_AUDIO_QUEUE,@">>>");
   [self driveRunLoop];
 }
 
-//Callback from AQClient thread
+//Callback from AQClient thread -> change to Main thread
 - (void)audioQueuePlaybackIsStarting:(BTAudioQueue *)audioQueue {
   CDLog(BTDFLAG_AUDIO_QUEUE, @">>>>>>>>");
   if (self.status == BTAudioPlayerStatusWaiting ||self.status == BTAudioPlayerStatusStop  ) {
-    self.status = BTAudioPlayerStatusPlaying;
-    [_audioQueue start];
+//    self.status = BTAudioPlayerStatusPlaying;
+//    [_audioQueue start];
+    [self performSelector:@selector(startQueue) onThread:_thread withObject:nil waitUntilDone:NO];
   }
 }
-//Callback from AQClient thread
+//Callback from AQClient thread -> change to Main thread
 - (void)audioQueuePlaybackIsComplete:(BTAudioQueue *)audioQueue {
   CDLog(BTDFLAG_AUDIO_QUEUE, @"<<<<<<<<<<<-->>>>>>>>>>>>");
   self.status = BTAudioPlayerStatusStop; //TODO: fix bug, bad access when play another music
@@ -413,17 +426,20 @@ void RunLoopSourceSeek (void *info) {
 //	[_audioQueue release];
 //  _audioQueue = nil;
 }
-
+//Callback from INTH thread
 - (void)audioQueueIsFull:(BTAudioQueue *)audioQueue {
   if (self.status == BTAudioPlayerStatusWaiting) {
-    self.status = BTAudioPlayerStatusPlaying;
-    [_audioQueue start];
+//    self.status = BTAudioPlayerStatusPlaying;
+//    [_audioQueue start];
+//    [self performSelector:@selector(startQueue) onThread:_thread withObject:nil waitUntilDone:NO];
+    [self startQueue];
   }
 }
 #pragma mark -
 #pragma mark Drive Data
 
 - (void)writeData {
+  NSAssert([[NSThread currentThread].name isEqualToString:@"INTH"],nil);
   CDLog(BTDFLAG_AUDIO_PLAYER, @"<<<<bufCountInQueue = %d; _playStatus = %d", _audioQueue.bufCountInQueue, _playStatus);
   if (self.status == BTAudioQueueStatusStopping ||self.status == BTAudioQueueStatusStopped || self.status == BTAudioQueueStatusPaused) {
     return;
@@ -492,6 +508,7 @@ void RunLoopSourceSeek (void *info) {
 #pragma mark -
 #pragma mark BTAudioPlayer Control
 - (void)start {
+  NSAssert([NSThread isMainThread],nil);
   CDLog(BTDFLAG_AUDIO_PLAYER,@">>>>>>>>>>start");
   _thread = [[NSThread alloc] initWithTarget:self selector:@selector(main) object:nil];
   [_thread setName:@"INTH"];
@@ -499,6 +516,7 @@ void RunLoopSourceSeek (void *info) {
 }
 
 - (void)stop {
+  NSAssert([NSThread isMainThread],nil);
   CDLog(BTDFLAG_AUDIO_PLAYER,@">>>>>>>>>>stop");
   //TODO: waitUntilDone:YES just for test
   [_thread cancel];
@@ -508,23 +526,28 @@ void RunLoopSourceSeek (void *info) {
 }
 
 - (BOOL)paused {
+  NSAssert([NSThread isMainThread],nil);
 	return (_playStatus == BTAudioPlayerStatusPaused || _playStatus == BTAudioPlayerStatusStop);
 }
 
 - (void)setPaused:(BOOL)paused {
+  NSAssert([NSThread isMainThread],nil);
   CDLog(BTDFLAG_AUDIO_PLAYER,@">>>>>>>>>>setPaused:%d",paused);
 	if (paused == [self paused]) {
 		return;
 	}
 
 	if (paused) {
-    [self pauseQueue];
+    //[self pauseQueue];
+    [self performSelector:@selector(pauseQueue) onThread:_thread withObject:nil waitUntilDone:YES];
 	} else {
-    [self startQueue];
+    //[self startQueue];
+    [self performSelector:@selector(startQueue) onThread:_thread withObject:nil waitUntilDone:YES];
 	}
 }
 
 - (void)startQueue {
+  NSAssert([[NSThread currentThread].name isEqualToString:@"INTH"],nil);
   if (self.status == BTAudioPlayerStatusStop) {
 //    if (_audioQueue == nil) {
     [_audioQueue bind];
@@ -543,11 +566,13 @@ void RunLoopSourceSeek (void *info) {
 }
 
 - (void)pauseQueue {
+  NSAssert([[NSThread currentThread].name isEqualToString:@"INTH"],nil);
   [_audioQueue pause];
   self.status = BTAudioPlayerStatusPaused;
 }
 
 - (void)setStatus:(BTAudioPlayerStatus)status {
+  NSAssert([[NSThread currentThread].name isEqualToString:@"INTH"],nil);
   if (_playStatus != status) {
 //    [self willChangeValueForKey:@"status"];
     _playStatus = status;
@@ -586,7 +611,7 @@ void RunLoopSourceSeek (void *info) {
 - (void)cancel {
   CDLog(BTDFLAG_AUDIO_PLAYER,@">>>>>>>>>>cancel");
   
-  
+  NSAssert([[NSThread currentThread].name isEqualToString:@"INTH"],nil);
   _request.delegate = nil;
   [_request cancel];
 	[_request release];
