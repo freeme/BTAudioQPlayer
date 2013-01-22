@@ -173,6 +173,7 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
   }
 }
 
+//TODO: 这里的逻辑需要rework
 - (OSStatus)start {
   NSAssert([[NSThread currentThread].name isEqualToString:@"INTH"],nil);
   OSStatus status = noErr;
@@ -246,12 +247,12 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
     _audioQueue = NULL;
 //    _currentFillBufferIndex = 0;
 //    _bufCountInQueue = 0;
-    [_condition lock];
-    while (_bufCountInQueue > 0) {
-      
-      [_condition wait];
-    }
-    [_condition unlock];
+//    [_condition lock];
+//    while (_bufCountInQueue > 0) {
+//      
+//      [_condition wait];
+//    }
+//    [_condition unlock];
 	}
 
   return status;
@@ -426,9 +427,9 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
   [_condition lock];
   
 	while (_inuse[_currentFillBufferIndex]) {//_inuse[_currentFillBufferIndex])  {self.status == BTAudioQueueStatusPaused ||
-//    if (self.status == BTAudioQueueStatusStopping ||self.status == BTAudioQueueStatusStopped || self.status == BTAudioQueueStatusPaused) {
-//      break;
-//    }
+    if (self.status == BTAudioQueueStatusStopping ||self.status == BTAudioQueueStatusStopped || self.status == BTAudioQueueStatusPaused) {
+      break;
+    }
     CDLog(BTDFLAG_AUDIO_QUEUE,@"[_condition       wait: %d",_currentFillBufferIndex);
     [_condition wait];
   }
