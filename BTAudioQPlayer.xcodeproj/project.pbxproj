@@ -11,6 +11,7 @@
 		3F9F59E8163E9FB400CD0D55 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 3F9F59E7163E9FB400CD0D55 /* README.md */; };
 		3FC0C73D163FF2AF0042E644 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3FC0C73C163FF2AF0042E644 /* AVFoundation.framework */; };
 		3FC749881640B1CD004C1C30 /* BTPlayerItem.m in Sources */ = {isa = PBXBuildFile; fileRef = 3FC749871640B1CD004C1C30 /* BTPlayerItem.m */; };
+		3FEE5E1316AD43E600172AEB /* BTRunLoopSource.m in Sources */ = {isa = PBXBuildFile; fileRef = 3FEE5E1216AD43E600172AEB /* BTRunLoopSource.m */; };
 		4E172DB3162F00F6009BD8C5 /* lpzd.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 4E172DB2162F00F6009BD8C5 /* lpzd.mp3 */; };
 		4E70AA2316215F2700875771 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4E70AA2216215F2700875771 /* UIKit.framework */; };
 		4E70AA2516215F2700875771 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4E70AA2416215F2700875771 /* Foundation.framework */; };
@@ -41,6 +42,8 @@
 		3FC749861640B1CD004C1C30 /* BTPlayerItem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BTPlayerItem.h; sourceTree = "<group>"; };
 		3FC749871640B1CD004C1C30 /* BTPlayerItem.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BTPlayerItem.m; sourceTree = "<group>"; };
 		3FEBA05D16241F1B004ED0D1 /* MPEG_Intro_And_HowToComputeCBR_VBR_MP3duration_v1.4.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = MPEG_Intro_And_HowToComputeCBR_VBR_MP3duration_v1.4.pdf; sourceTree = "<group>"; };
+		3FEE5E1116AD43E600172AEB /* BTRunLoopSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BTRunLoopSource.h; sourceTree = "<group>"; };
+		3FEE5E1216AD43E600172AEB /* BTRunLoopSource.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BTRunLoopSource.m; sourceTree = "<group>"; };
 		4E172DB2162F00F6009BD8C5 /* lpzd.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = lpzd.mp3; sourceTree = "<group>"; };
 		4E70AA1E16215F2700875771 /* BTAudioQPlayer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BTAudioQPlayer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4E70AA2216215F2700875771 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
@@ -185,6 +188,8 @@
 				4E70AA701621707B00875771 /* AudioPlayerUtil.m */,
 				3FC749861640B1CD004C1C30 /* BTPlayerItem.h */,
 				3FC749871640B1CD004C1C30 /* BTPlayerItem.m */,
+				3FEE5E1116AD43E600172AEB /* BTRunLoopSource.h */,
+				3FEE5E1216AD43E600172AEB /* BTRunLoopSource.m */,
 			);
 			name = Player;
 			sourceTree = "<group>";
@@ -271,6 +276,7 @@
 				4E70AA741621707B00875771 /* BTAudioQueue.m in Sources */,
 				4E70AA751621707B00875771 /* AudioPlayerUtil.m in Sources */,
 				3FC749881640B1CD004C1C30 /* BTPlayerItem.m in Sources */,
+				3FEE5E1316AD43E600172AEB /* BTRunLoopSource.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

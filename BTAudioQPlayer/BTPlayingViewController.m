@@ -34,8 +34,7 @@ static BTPlayingViewController *instance;
 {
   self = [super init];
   if (self) {
-      // Custom initialization
-
+    // Custom initialization
   }
   return self;
 }
@@ -168,10 +167,18 @@ static BTPlayingViewController *instance;
   
   //Add for test
   if (_player) {
-    [_player stop];
-    [_player release];
-    CDLog(BTDFLAG_AUDIO_PLAYER, @"AFTER [_player release]");
-    _player = nil;
+//    [_player stop];
+//    [_player release];
+//    CDLog(BTDFLAG_AUDIO_PLAYER, @"AFTER [_player release]");
+//    _player = nil;
+    if (_playingIndex + 1 < [_playList count]) {
+      _playingIndex ++;
+    } else {
+      _playingIndex = 0;
+    }
+    Music *music = [_playList objectAtIndex:_playingIndex];
+    _musicTitle.text = music.title;
+    [_player play:[NSURL URLWithString:music.downloadLink]];
   }
   
 }

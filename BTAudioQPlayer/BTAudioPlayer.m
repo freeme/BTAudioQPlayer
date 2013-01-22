@@ -5,24 +5,57 @@
 #import "BTAudioPlayer.h"
 #import <dispatch/dispatch.h>
 
+#define CMD_PLAY @"play"
+#define CMD_SEEK @"seek"
+
 @interface BTAudioPlayer (Private)
 
 @property (readwrite) BTAudioPlayerStatus status;
 
 - (void)writeData;
 - (void)cancel;
-
+- (void)_playInternal;
+- (void)_seekInternal;
 @end
 
 @implementation BTAudioPlayer
 @synthesize status = _playStatus;
 void RunLoopSourcePerformRoutine (void *info);
+void RunLoopSourcePlay (void *info);
+void RunLoopSourceSeek (void *info);
+void RunLoopSourceSeekSchedule(void *info, CFRunLoopRef rl, CFStringRef mode);
+void RunLoopSourceSeekCancel(void *info, CFRunLoopRef rl, CFStringRef mode);
 
 void RunLoopSourcePerformRoutine (void *info) {
   if (info != NULL && [(id)info isKindOfClass:[BTAudioPlayer class]]) {
     BTAudioPlayer*  player = (BTAudioPlayer*)info;
     if ([player respondsToSelector:@selector(writeData)]) {
       [player writeData];
+    }
+  }
+}
+
+void RunLoopSourcePlay (void *info) {
+  if (info != NULL && [(id)info isKindOfClass:[BTAudioPlayer class]]) {
+    BTAudioPlayer*  player = (BTAudioPlayer*)info;
+    if ([player respondsToSelector:@selector(_playInternal)]) {
+      [player _playInternal];
+    }
+  }
+}
+
+void RunLoopSourceSeekSchedule(void *info, CFRunLoopRef rl, CFStringRef mode) {
+  CDLog(BTDFLAG_DEFAULT,@"");
+}
+
+void RunLoopSourceSeekCancel(void *info, CFRunLoopRef rl, CFStringRef mode) {
+  CDLog(BTDFLAG_DEFAULT,@"");
+}
+void RunLoopSourceSeek (void *info) {
+  if (info != NULL && [(id)info isKindOfClass:[BTAudioPlayer class]]) {
+    BTAudioPlayer*  player = (BTAudioPlayer*)info;
+    if ([player respondsToSelector:@selector(_seekInternal)]) {
+      [player _seekInternal];
     }
   }
 }
@@ -54,35 +87,73 @@ void RunLoopSourcePerformRoutine (void *info) {
 }
 
 - (void)play:(NSURL*)url {
+  CDLog(BTDFLAG_DEFAULT,@"");
   if (url && _url != url) {
     [_url release];
     _url = [url retain];
-    [_playerItem release];
-    _playerItem = nil;
-    _playerItem = [[BTPlayerItem alloc] initWithURL:_url];
-    _request = [[BTAudioRequest alloc] initRequestWithURL:_url delegate:self];
-    [_request start];
+
+    [_btRunLoopSource addCommand:CMD_PLAY];
+    [_btRunLoopSource fireAllCommands];
+    //[self driveRunLoopSourcePlay];
   }
 }
- 
 
-- (void)main {
+- (void)_playInternal {
   CDLog(BTDFLAG_DEFAULT,@"");
+  [_audioQueue unbind];
+  [_audioQueue release];
+  _audioQueue = nil;
+  [_playerItem release];
+  _playerItem = nil;
+  
+  _request.delegate = nil;
+  [_request cancel];
+  [_request release];
+  _request = nil;
+  
+  _fileStream.delegate = nil;
+  [_fileStream release];
+  _fileStream = nil;
+  
+  _fileStream = [[BTAudioFileStream alloc] initFileStreamWithDelegate:self];
+  [_fileStream open];
   _playerItem = [[BTPlayerItem alloc] initWithURL:_url];
   _request = [[BTAudioRequest alloc] initRequestWithURL:_url delegate:self];
   [_request start];
+
+  [_audioQueue bind];
+  self.status = BTAudioPlayerStatusStop;
+}
+
+
+- (void)main {
+  CDLog(BTDFLAG_DEFAULT,@"");
+
   _runLoop = CFRunLoopGetCurrent();
-  
+  _btRunLoopSource = [[BTRunLoopSource alloc] init];
+  _btRunLoopSource.delegate = self;
+  [_btRunLoopSource addToCurrentRunLoop];
   CFRunLoopSourceContext context = {0, self, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &RunLoopSourcePerformRoutine};
   _runLoopSource = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &context);
   CFRunLoopAddSource(_runLoop, _runLoopSource, kCFRunLoopDefaultMode);
 
-
+  CFRunLoopSourceContext context1 = {0, self, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &RunLoopSourcePlay};
+  _runLoopSourcePlay = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &context1);
+  CFRunLoopAddSource(_runLoop, _runLoopSourcePlay, kCFRunLoopDefaultMode);
   
-  //_audioQueue = [[BTAudioQueue alloc] initQueueWithDelegate:self];
-  _fileStream = [[BTAudioFileStream alloc] initFileStreamWithDelegate:self];
-  [_fileStream open];
-  self.status = BTAudioPlayerStatusStop;
+  CFRunLoopSourceContext context2 = {0, self, NULL, NULL, NULL, NULL, NULL, &RunLoopSourceSeekSchedule, &RunLoopSourceSeekCancel, &RunLoopSourceSeek};
+  _runLoopSourceSeek = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &context2);
+  CFRunLoopAddSource(_runLoop, _runLoopSourceSeek, kCFRunLoopDefaultMode);
+  
+  [_btRunLoopSource addCommand:CMD_PLAY];
+  [_btRunLoopSource fireAllCommands];
+//  _playerItem = [[BTPlayerItem alloc] initWithURL:_url];
+//  _request = [[BTAudioRequest alloc] initRequestWithURL:_url delegate:self];
+//  [_request start];
+//  //_audioQueue = [[BTAudioQueue alloc] initQueueWithDelegate:self];
+//  _fileStream = [[BTAudioFileStream alloc] initFileStreamWithDelegate:self];
+//  [_fileStream open];
+//  self.status = BTAudioPlayerStatusStop;
   
   heartbeatTimer = [NSTimer scheduledTimerWithTimeInterval:0.25 target:self selector:@selector(writeData) userInfo:nil repeats:YES];
   
@@ -100,9 +171,15 @@ void RunLoopSourcePerformRoutine (void *info) {
     }
     [pool drain];
   }
-
   CDLog(BTDFLAG_AUDIO_PLAYER, @"Thread Exit!------");
-  
+}
+
+- (void)performCommand:(NSString *)command {
+  if ([command isEqualToString:CMD_PLAY]) {
+    [self _playInternal];
+  } else if([command isEqualToString:CMD_SEEK]) {
+    [self _seekInternal];
+  }
 }
 
 - (void)error {
@@ -116,16 +193,20 @@ void RunLoopSourcePerformRoutine (void *info) {
 //  [_audioQueue reset];
 //  [_audioQueue pause];
 //  self.status = BTAudioPlayerStatusWaiting;
-  [self performSelector:@selector(internalSeekToTime:) onThread:_thread withObject:[NSNumber numberWithFloat:newSeekTime] waitUntilDone:YES];
+  requestedSeekTime = newSeekTime;
+//  [self driveRunLoopSourceSeek];
+  [_btRunLoopSource addCommand:CMD_SEEK];
+  [_btRunLoopSource fireAllCommands];
 }
 
 // internalSeekToTime:
 //
 // Called from our internal runloop to reopen the stream at a seeked location
 //
-- (void) internalSeekToTime:(NSNumber*)newSeekTime {
+//- (void) internalSeekToTime:(NSNumber*)newSeekTime {
+- (void) _seekInternal {
   CDLog(BTDFLAG_AUDIO_PLAYER, @"");
-  Float64 nSeekTime = [newSeekTime floatValue];
+  Float64 nSeekTime = requestedSeekTime;
   if ([_playerItem calculatedBitRate] == 0.0 || _playerItem.expectedContentLength <= 0) {
 		return;
 	}
@@ -208,11 +289,22 @@ void RunLoopSourcePerformRoutine (void *info) {
 #pragma mark RunLoop Source
 - (void) driveRunLoop {
   return;
-  //CDLog(BTDFLAG_AUDIO_PLAYER, @" *************** ");
+  CDLog(BTDFLAG_AUDIO_PLAYER, @" *************** ");
   CFRunLoopSourceSignal(_runLoopSource);
   CFRunLoopWakeUp(_runLoop);
 }
 
+- (void) driveRunLoopSourcePlay {
+  CDLog(BTDFLAG_AUDIO_PLAYER, @" *************** ");
+  CFRunLoopSourceSignal(_runLoopSourcePlay);
+  CFRunLoopWakeUp(_runLoop);
+}
+
+- (void) driveRunLoopSourceSeek {
+  CDLog(BTDFLAG_AUDIO_PLAYER, @" *************** ");
+  CFRunLoopSourceSignal(_runLoopSourceSeek);
+  CFRunLoopWakeUp(_runLoop);
+}
 #pragma mark -
 #pragma mark BTAudioRequestDelegate
 - (void)audioRequestDidStart:(BTAudioRequest *)request {
@@ -332,6 +424,7 @@ void RunLoopSourcePerformRoutine (void *info) {
 #pragma mark Drive Data
 
 - (void)writeData {
+  CDLog(BTDFLAG_AUDIO_PLAYER, @"<<<<bufCountInQueue = %d; _playStatus = %d", _audioQueue.bufCountInQueue, _playStatus);
   if (self.status == BTAudioQueueStatusStopping ||self.status == BTAudioQueueStatusStopped || self.status == BTAudioQueueStatusPaused) {
     return;
   }
@@ -339,7 +432,7 @@ void RunLoopSourcePerformRoutine (void *info) {
     return;
   }
   NSUInteger availableDataLength = [_playerItem availableDataLength];
-  CDLog(BTDFLAG_AUDIO_PLAYER, @"<<<<bufCountInQueue = %d availableData = %d _playStatus = %d", _audioQueue.bufCountInQueue, availableDataLength, _playStatus);
+  
   //可用数据长度为0了，播放器的状态还在播放
   if (availableDataLength == 0 && (_playStatus == BTAudioPlayerStatusPlaying)) {
     if ([_playerItem isDataComplete]) { //所有数据都下载完了，并且可用数据长度为0，说明数据都已经写到Buffer里了
@@ -512,8 +605,11 @@ void RunLoopSourcePerformRoutine (void *info) {
   //CDLog(BTDFLAG_AUDIO_PLAYER, @"_runLoop:%d, _runLoopSource:%d", _runLoop, _runLoopSource);
   if (_runLoop) {
     CFRunLoopRemoveSource(_runLoop, _runLoopSource, kCFRunLoopDefaultMode);
+    CFRunLoopRemoveSource(_runLoop, _runLoopSourcePlay, kCFRunLoopDefaultMode);
     CFRelease(_runLoopSource);
     _runLoopSource = NULL;
+    CFRelease(_runLoopSourcePlay);
+    _runLoopSourcePlay = NULL;
     CFRunLoopStop(_runLoop);
     _runLoop = NULL;
   }

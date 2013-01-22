@@ -28,6 +28,8 @@
 	NSTimer *progressUpdateTimer;
   
   BTAudioPlayer *_player;
+  
+  NSObject *_obj;
 }
 
 

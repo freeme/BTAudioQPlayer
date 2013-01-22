@@ -32,7 +32,7 @@ void audioQueueOutputCallback (void *inUserData, AudioQueueRef inAQ, AudioQueueB
 }
 
 - (void)bufferDidEmpty:(AudioQueueBufferRef)bufferRef {
-  
+  //NSAssert1(![[NSThread currentThread].name isEqualToString:@"AQClient"], @"%s", __FUNCTION__);
   unsigned int bufIndex = -1;
 	for (unsigned int i = 0; i < kNumAQBufs; ++i) {
 		if (bufferRef == _buffers[i]) {
@@ -51,13 +51,13 @@ void audioQueueOutputCallback (void *inUserData, AudioQueueRef inAQ, AudioQueueB
     [_condition lock];
     _inuse[bufIndex] = NO;
     _bufCountInQueue--;
-    CDLog(BTDFLAG_AUDIO_QUEUE,@"_bufCountInQueue-- = %d bufferRef:%d", _bufCountInQueue,bufferRef);
+    //CDLog(BTDFLAG_AUDIO_QUEUE,@"_bufCountInQueue-- = %d bufferRef:%d", _bufCountInQueue,bufferRef);
     [_condition broadcast];
     [_condition unlock];
     
-    if (_delegate && [_delegate respondsToSelector:@selector(audioQueue:isDoneWithBuffer:)]) {
-      [_delegate audioQueue:self isDoneWithBuffer:bufferRef];
-    }
+//    if (_delegate && [_delegate respondsToSelector:@selector(audioQueue:isDoneWithBuffer:)]) {
+//      [_delegate audioQueue:self isDoneWithBuffer:bufferRef];
+//    }
   }
 
 }
@@ -84,11 +84,15 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
     if (result == 0) {
       _queueStatus = BTAudioQueueStatusStopped;
       if (_delegate && [_delegate respondsToSelector:@selector(audioQueuePlaybackIsComplete:)]) {
-        [_delegate audioQueuePlaybackIsComplete:self];
+        //dispatch_async(dispatch_get_main_queue(), ^{
+          [_delegate audioQueuePlaybackIsComplete:self];
+        //});
       }
     } else {
       if (_delegate && [_delegate respondsToSelector:@selector(audioQueuePlaybackIsStarting:)]) {
-        [_delegate audioQueuePlaybackIsStarting:self];
+        //dispatch_async(dispatch_get_main_queue(), ^{
+          [_delegate audioQueuePlaybackIsStarting:self];
+        //});
       }
     }
   }
@@ -203,7 +207,11 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
     if (_queueStatus == BTAudioQueueStatusStopping) {// 这里有问题，availableDataLength = 0时， writeData可能不会再进来了
       if ([self isEmpty]) {
         [self pause];
-        [_delegate audioQueuePlaybackIsComplete:self];
+        if (_delegate && [_delegate respondsToSelector:@selector(audioQueuePlaybackIsComplete:)]) {
+          //dispatch_async(dispatch_get_main_queue(), ^{
+            [_delegate audioQueuePlaybackIsComplete:self];
+          //});
+        }
       }
     } else {
       _queueStatus = BTAudioQueueStatusStopping;
@@ -382,9 +390,11 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
       //UInt32 outNumberOfFramesPrepared;
       //OSStatus status = AudioQueuePrime (_audioQueue,0,&outNumberOfFramesPrepared);
       //CDLog(BTDFLAG_AUDIO_QUEUE,@"[outNumberOfFramesPrepared = %ld", outNumberOfFramesPrepared);
-      [_delegate audioQueueIsFull:self];
-    //}
-  
+    if (_delegate && [_delegate respondsToSelector:@selector(audioQueueIsFull:)]) {
+      //dispatch_async(dispatch_get_main_queue(), ^{
+        [_delegate audioQueueIsFull:self];
+      //});
+    }
   }
   
 	// wait until next buffer is not in use
