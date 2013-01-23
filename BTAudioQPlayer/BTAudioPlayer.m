@@ -11,3 +11,11 @@
 @implementation BTAudioPlayer
 
 @end
+
+@implementation BTAudioPlayer(BTAudioPlayerItemControl)
+
+- (void)setActionAtItemEnd:(BTPlayerActionAtItemEnd)actionAtItemEnd {
+  NSAssert(actionAtItemEnd == BTPlayerActionAtItemEndLoop, nil);
+}
+
+@end
