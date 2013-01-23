@@ -94,7 +94,7 @@ static BTPlayingViewController *instance;
   NSURL *url = [[NSBundle mainBundle] URLForResource:@"lpzd" withExtension:@"mp3"];
   _player = [[BTAudioPlayer alloc] initPlayerWithURL:url delegate:self];
   */
-  _player = [[BTAudioPlayer alloc] initPlayerWithURL:[NSURL URLWithString:music.downloadLink ] delegate:self];
+  _player = [[BTAudioPlayerInternal alloc] initPlayerWithURL:[NSURL URLWithString:music.downloadLink ] delegate:self];
 
   [_player start];
   [self setUpdateTimer];
@@ -222,29 +222,29 @@ static BTPlayingViewController *instance;
 /*
  * Notifies the delegate that the requested file was not playable.
  */
-- (void)audioPlayer:(BTAudioPlayer *)audioPlayer failedWithError:(NSError*)error{
+- (void)audioPlayer:(BTAudioPlayerInternal *)audioPlayer failedWithError:(NSError*)error{
   
 }
 
 /*
  * Notifies the delegate that playback of the requested file has begun.
  */
-- (void)audioPlayerStarted:(BTAudioPlayer *)audioPlayer {
+- (void)audioPlayerStarted:(BTAudioPlayerInternal *)audioPlayer {
   [self updateUIPlayingMusic];
 }
 
-- (void)audioPlayerWaiting:(BTAudioPlayer *)audioPlayer {
+- (void)audioPlayerWaiting:(BTAudioPlayerInternal *)audioPlayer {
   [self updateUIWaitMusicToPlay];
 }
 
 /*
  * Notifies the delegate that playback of the request file is complete.
  */
-- (void)audioPlayerFinished:(BTAudioPlayer *)audioPlayer {
+- (void)audioPlayerFinished:(BTAudioPlayerInternal *)audioPlayer {
   [self updateUIPauseMusic];
 }
 
-- (void)audioPlayer:(BTAudioPlayer *) audioPlayer downloadProgress:(float)progress{
+- (void)audioPlayer:(BTAudioPlayerInternal *) audioPlayer downloadProgress:(float)progress{
 //  float p = [progress floatValue];
   CVLog(BTDFLAG_NETWORK,@"progress = %.4f", progress);
   _downloadProgressView.progress = progress;

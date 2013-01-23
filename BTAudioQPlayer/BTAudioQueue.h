@@ -88,10 +88,10 @@ typedef NS_ENUM(NSInteger, BTAudioQueueStatus) {
 
 @end
 
-@class BTPlayerItem;
+@class BTPlayerItemInternal;
 @protocol BTAudioQueueDelegate<NSObject>
 
-- (BTPlayerItem*)playerItemForAudioQueue:(BTAudioQueue *)audioQueue;
+- (BTPlayerItemInternal*)playerItemForAudioQueue:(BTAudioQueue *)audioQueue;
 /*
  * Notifies the delegate that the AudioQueue is done enqueueing a
  * buffer and the buffer may now be released.

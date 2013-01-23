@@ -4,7 +4,7 @@
 
 #import "BTAudioQueue.h"
 #import "AudioPlayerUtil.h"
-#import "BTPlayerItem.h"
+#import "BTPlayerItemInternal.h"
 #define AQThreadName @"AQClient"
 
 @interface BTAudioQueue(Private)
@@ -134,7 +134,7 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
   NSAssert([[NSThread currentThread].name isEqualToString:@"INTH"],nil);
   CDLog(BTDFLAG_AUDIO_QUEUE, @" >>>>>>>>>> initQueue _audioQueue:%d", _audioQueue);
   if (_audioQueue == NULL && _delegate && [_delegate respondsToSelector:@selector(playerItemForAudioQueue:)]) {
-    BTPlayerItem *item = [_delegate playerItemForAudioQueue:self];
+    BTPlayerItemInternal *item = [_delegate playerItemForAudioQueue:self];
     if (item) {
       _queueStatus = BTAudioQueueStatusStopped;
       _packetBufferSize = item.packetBufferSize;

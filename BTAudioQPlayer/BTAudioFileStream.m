@@ -5,7 +5,7 @@
 #import "BTAudioFileStream.h"
 #import "AudioPlayerUtil.h"
 #import "BTDebug.h"
-#import "BTAudioPlayer.h"
+#import "BTAudioPlayerInternal.h"
 
 @implementation BTAudioFileStream
 
