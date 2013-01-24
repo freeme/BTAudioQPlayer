@@ -8,9 +8,10 @@
 
 #import "BTAudioPlayer.h"
 #import "BTAudioPlayerInternal.h"
-
+#import "BTPlayerItem.h"
 
 @implementation BTAudioPlayer
+@synthesize status;
 
 - (void) dealloc {
   
@@ -82,10 +83,23 @@
 
 @end
 
-@implementation BTAudioPlayer(BTAudioPlayerItemControl)
+@implementation BTAudioPlayer (BTAudioPlayerItemControl)
+
+
+- (void)playWithPlayerItem:(BTPlayerItem *)item {
+  
+}
 
 - (void)setActionAtItemEnd:(BTPlayerActionAtItemEnd)actionAtItemEnd {
   NSAssert(actionAtItemEnd == BTPlayerActionAtItemEndLoop, nil);
+}
+
+- (BTPlayerActionAtItemEnd)actionAtItemEnd {
+  return 0;
+}
+
+- (BTPlayerItem*)currentItem {
+  return nil;
 }
 
 @end

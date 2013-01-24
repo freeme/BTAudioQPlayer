@@ -97,7 +97,7 @@ typedef enum
 //#import "BTRunLoopSource.h"
 //#import "BTAudioPlayer.h"
 //#import "BTPlayerItem.h"
-//#import "BTAudioPlayer.h"
+#import "BTAudioPlayer.h"
 @class BTAudioPlayer;
 @class BTPlayerItem;
 @class BTAudioRequest;
@@ -149,10 +149,12 @@ typedef enum
 - (id)initWithAudioPlayer:(BTAudioPlayer*) audioPlayer;
 - (id)initWithURL:(NSURL *)URL audioPlayer:(BTAudioPlayer*) audioPlayer;
 - (id)initWithPlayerItem:(BTPlayerItem *)item audioPlayer:(BTAudioPlayer*) audioPlayer;
-
+- (void)setURL:(NSURL*)url;
+- (void)play;
+- (void)pause;
 //==================
 @property (nonatomic) BOOL paused;
-@property (readonly) NSInteger status;
+@property (readonly) BTAudioPlayerStatus status;
 - (id)initPlayerWithDelegate:(id<BTAudioPlayerDelegate>) aDelegate;
 - (id)initPlayerWithURL:(NSURL *)url delegate:(id<BTAudioPlayerDelegate>) aDelegate;
 
