@@ -36,6 +36,12 @@ static BTPlayingViewController *instance;
   self = [super init];
   if (self) {
     // Custom initialization
+    _player = [[BTAudioPlayer alloc] init];
+    [_player addObserver:self
+            forKeyPath:@"status"
+               options:(NSKeyValueObservingOptionNew |
+                        NSKeyValueObservingOptionOld)
+               context:NULL];
   }
   return self;
 }
@@ -44,6 +50,7 @@ static BTPlayingViewController *instance;
 {
     [super viewDidLoad];
     // Do any additional setup after loading the view from its nib.
+    [_player setValue:[NSNumber numberWithInt:3] forKey:@"status"];
 }
 
 - (void)viewDidUnload
@@ -113,6 +120,7 @@ static BTPlayingViewController *instance;
                         change:(NSDictionary *)change
                        context:(void *)context {
   DLog(@"keyPath = %@ . object = %@ . change = %@", keyPath,object,change);
+  DLog(@"th:%d,_player.status = %d", [NSThread isMainThread],_player.status);
 //  if ([keyPath isEqual:@"status"]) {
 //    [openingBalanceInspectorField setObjectValue:
 //     [change objectForKey:NSKeyValueChangeNewKey]];

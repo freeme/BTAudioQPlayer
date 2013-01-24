@@ -97,7 +97,7 @@ typedef enum
 //#import "BTRunLoopSource.h"
 //#import "BTAudioPlayer.h"
 //#import "BTPlayerItem.h"
-#import "BTAudioPlayer.h"
+//#import "BTAudioPlayer.h"
 @class BTAudioPlayer;
 @class BTPlayerItem;
 @class BTAudioRequest;
@@ -124,7 +124,7 @@ typedef enum
 	BTAudioQueue *            _audioQueue;
 	
 	//volatile BOOL                      paused;
-  volatile BTAudioPlayerStatus       _playStatus;
+  volatile NSInteger       _playStatus;
   NSURL *                   _url;
   NSThread *                _thread;
   
@@ -146,15 +146,13 @@ typedef enum
 	Float64                              requestedSeekTime;
   NSTimer                   *heartbeatTimer;
 }
-
-
-@property(nonatomic, assign) BTAudioPlayer *outsidePlayer;
-- (id)initWithURL:(NSURL *)URL;
-- (id)initWithPlayerItem:(BTPlayerItem *)item;
+- (id)initWithAudioPlayer:(BTAudioPlayer*) audioPlayer;
+- (id)initWithURL:(NSURL *)URL audioPlayer:(BTAudioPlayer*) audioPlayer;
+- (id)initWithPlayerItem:(BTPlayerItem *)item audioPlayer:(BTAudioPlayer*) audioPlayer;
 
 //==================
 @property (nonatomic) BOOL paused;
-@property (readonly) BTAudioPlayerStatus status;
+@property (readonly) NSInteger status;
 - (id)initPlayerWithDelegate:(id<BTAudioPlayerDelegate>) aDelegate;
 - (id)initPlayerWithURL:(NSURL *)url delegate:(id<BTAudioPlayerDelegate>) aDelegate;
 
@@ -177,26 +175,26 @@ typedef enum
 
 
 
-@protocol BTAudioPlayerDelegate<NSObject>
-/*
- * Notifies the delegate that the requested file was not playable.
- */
-- (void)audioPlayer:(BTAudioPlayerInternal *)audioPlayer failedWithError:(NSError*)error;
-
-/*
- * Notifies the delegate that playback of the requested file has begun.
- */
-- (void)audioPlayerStarted:(BTAudioPlayerInternal *)audioPlayer;
-
-- (void)audioPlayerWaiting:(BTAudioPlayerInternal *)audioPlayer;
-
-/*
- * Notifies the delegate that playback of the request file is complete.
- */
-- (void)audioPlayerFinished:(BTAudioPlayerInternal *)audioPlayer;
-
-- (void)audioPlayer:(BTAudioPlayerInternal *) audioPlayer downloadProgress:(float)progress;
-@end
+//@protocol BTAudioPlayerDelegate<NSObject>
+///*
+// * Notifies the delegate that the requested file was not playable.
+// */
+//- (void)audioPlayer:(BTAudioPlayerInternal *)audioPlayer failedWithError:(NSError*)error;
+//
+///*
+// * Notifies the delegate that playback of the requested file has begun.
+// */
+//- (void)audioPlayerStarted:(BTAudioPlayerInternal *)audioPlayer;
+//
+//- (void)audioPlayerWaiting:(BTAudioPlayerInternal *)audioPlayer;
+//
+///*
+// * Notifies the delegate that playback of the request file is complete.
+// */
+//- (void)audioPlayerFinished:(BTAudioPlayerInternal *)audioPlayer;
+//
+//- (void)audioPlayer:(BTAudioPlayerInternal *) audioPlayer downloadProgress:(float)progress;
+//@end
 
 /*
  Responding to Sound Playback Completion

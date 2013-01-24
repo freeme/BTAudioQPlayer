@@ -36,7 +36,7 @@ typedef NSInteger BTAudioPlayerStatus;
 
 
 @interface BTAudioPlayer : NSObject {
-  //@private
+  @private
   BTAudioPlayerInternal *_intenralPlayer;
 }
 

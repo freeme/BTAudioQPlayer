@@ -12,6 +12,11 @@
 
 @implementation BTAudioPlayer
 
+- (void) dealloc {
+  
+  [_intenralPlayer release];
+  [super dealloc];
+}
 
 + (id)playerWithURL:(NSURL *)URL {
   BTAudioPlayer *player = [[[BTAudioPlayer alloc] initWithURL:URL] autorelease];
@@ -21,26 +26,33 @@
   BTAudioPlayer *player = [[[BTAudioPlayer alloc] initWithPlayerItem:item] autorelease];
   return player;
 }
+
+- (id)init {
+  self = [super init];
+  if (self) {
+    _intenralPlayer = [[BTAudioPlayerInternal alloc] initWithAudioPlayer:self];
+  }
+  return self;
+}
+
 - (id)initWithURL:(NSURL *)URL {
   self = [super init];
   if (self) {
-    _intenralPlayer = [[BTAudioPlayerInternal alloc] initWithURL:URL];
-    _intenralPlayer.outsidePlayer = self;
+    _intenralPlayer = [[BTAudioPlayerInternal alloc] initWithURL:URL audioPlayer:self];
   }
   return self;
 }
 - (id)initWithPlayerItem:(BTPlayerItem *)item {
   self = [super init];
   if (self) {
-    _intenralPlayer = [[BTAudioPlayerInternal alloc] initWithPlayerItem:item];
-    _intenralPlayer.outsidePlayer = self;
+    _intenralPlayer = [[BTAudioPlayerInternal alloc] initWithPlayerItem:item audioPlayer:self];
   }
   return self;
 }
 
-- (BTAudioPlayerStatus) status {
-  return _intenralPlayer.status;
-}
+//- (BTAudioPlayerStatus) status {
+//  return _intenralPlayer.status;
+//}
 
 - (NSError*)error {
   return nil;

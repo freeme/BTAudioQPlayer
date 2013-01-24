@@ -9,7 +9,7 @@
 #import "BTAudioQueue.h"
 #import "BTPlayerItemInternal.h"
 #import "BTRunLoopSource.h"
-
+#import "BTAudioPlayer.h"
 
 #define CMD_PLAY @"play"
 #define CMD_SEEK @"seek"
@@ -25,7 +25,7 @@
 @end
 
 @implementation BTAudioPlayerInternal
-@synthesize outsidePlayer = _outsidePlayer;
+
 @synthesize status = _playStatus;
 void RunLoopSourcePerformRoutine (void *info);
 void RunLoopSourcePlay (void *info);
@@ -75,17 +75,29 @@ void RunLoopSourceSeek (void *info) {
 	[super dealloc];
 }
 
-- (id)initWithURL:(NSURL *)URL {
+- (id)initWithAudioPlayer:(BTAudioPlayer*) audioPlayer {
   self = [super init];
   if (self) {
-    _url = [URL retain];
+    _outsidePlayer = audioPlayer;
   }
   return self;
 }
-- (id)initWithPlayerItem:(BTPlayerItem *)item {
+
+- (id)initWithURL:(NSURL *)URL audioPlayer:(BTAudioPlayer*) audioPlayer;{
+  self = [super init];
+  if (self) {
+    _url = [URL retain];
+    _outsidePlayer = audioPlayer;
+    [_outsidePlayer setValue:[NSNumber numberWithInt:3] forKey:@"status"];
+  }
+  return self;
+}
+- (id)initWithPlayerItem:(BTPlayerItem *)item audioPlayer:(BTAudioPlayer*) audioPlayer;{
   self = [super init];
   if (self) {
     _currentItem = [item retain];
+    _outsidePlayer = audioPlayer;
+    
   }
   return self;
 }
@@ -598,7 +610,12 @@ void RunLoopSourceSeek (void *info) {
   if (_playStatus != status) {
 //    [self willChangeValueForKey:@"status"];
     _playStatus = status;
+    dispatch_async(dispatch_get_main_queue(), ^{
+      [_outsidePlayer setValue:[NSNumber numberWithInt:status] forKey:@"status"];
+    });
+    
 //    [self didChangeValueForKey:@"status"];
+    /*
     if (_delegate) {
       switch (_playStatus) {
         case BTAudioPlayerStatusWaiting:
@@ -626,8 +643,9 @@ void RunLoopSourceSeek (void *info) {
       }
 
     }
+     */
   }
-   //[self setValue:[NSNumber numberWithInt:status] forKey:@"status"];
+   
 }
 
 - (void)cancel {
@@ -709,17 +727,17 @@ void RunLoopSourceSeek (void *info) {
 @end
 
 
-@interface BTAudioPlayer()
-
-@property (nonatomic) BTAudioPlayerStatus status;
-
-@end
-
-@implementation BTAudioPlayer
-
-- (void) setStatus:(BTAudioPlayerStatus)status {
-  
-}
-
-@end
+//@interface BTAudioPlayer()
+//
+//@property (nonatomic) BTAudioPlayerStatus status;
+//
+//@end
+//
+//@implementation BTAudioPlayer
+//
+//- (void) setStatus:(BTAudioPlayerStatus)status {
+//  
+//}
+//
+//@end
 
