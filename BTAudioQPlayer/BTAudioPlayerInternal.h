@@ -4,11 +4,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import "BTAudioRequest.h"
-#import "BTAudioFileStream.h"
-#import "BTAudioQueue.h"
-#import "BTPlayerItemInternal.h"
-#import "BTRunLoopSource.h"
+
 
 #define kAQDefaultBufSize 2048	// Number of bytes in each audio queue buffer
 // Needs to be big enough to hold a packet of
@@ -82,23 +78,46 @@ typedef enum
  waiting: 进入这个状态有很多原因。一个主要的原因就是等待数据。
  
  */
-typedef NS_ENUM(NSInteger, BTAudioPlayerStatus) {
-	BTAudioPlayerStatusStop, 
-  BTAudioPlayerStatusWaiting,
-  BTAudioPlayerStatusPlaying,
-  BTAudioPlayerStatusPaused,
-  //BTAudioPlayerStatusReadyToPlay
-} ;
+//typedef NS_ENUM(NSInteger, BTAudioPlayerStatus) {
+//	BTAudioPlayerStatusStop, 
+//  BTAudioPlayerStatusWaiting,
+//  BTAudioPlayerStatusPlaying,
+//  BTAudioPlayerStatusPaused,
+//  //BTAudioPlayerStatusReadyToPlay
+//} ;
 
 
 //BTAudioPlayerStateStop: Finish, UserAction, Error
 //BTAudioPlayerStateWaiting: WaitingData, QUEUE_TO_START,Waiting Buffer
-
-
-
+//
+//#import "BTAudioRequest.h"
+//#import "BTAudioFileStream.h"
+//#import "BTAudioQueue.h"
+//#import "BTPlayerItemInternal.h"
+//#import "BTRunLoopSource.h"
+//#import "BTAudioPlayer.h"
+//#import "BTPlayerItem.h"
+#import "BTAudioPlayer.h"
+@class BTAudioPlayer;
+@class BTPlayerItem;
+@class BTAudioRequest;
+@class BTAudioFileStream;
+@class BTAudioQueue;
+@class BTPlayerItemInternal;
+@class BTRunLoopSource;
 @protocol BTAudioPlayerDelegate;
+@protocol BTAudioRequestDelegate;
+@protocol BTAudioFileStreamDelegate;
+@protocol BTAudioQueueDelegate;
+@protocol BTRunLoopSourcePerformDelegate;
 
 @interface BTAudioPlayerInternal : NSObject <	BTAudioRequestDelegate,	BTAudioFileStreamDelegate,	BTAudioQueueDelegate, BTRunLoopSourcePerformDelegate> {
+  @private
+  BTAudioPlayer *           _outsidePlayer;
+  BTPlayerItem  *           _currentItem;
+  
+  
+  //==============================
 	id<BTAudioPlayerDelegate> _delegate;
 	BTAudioRequest *          _request;
 	BTAudioFileStream *       _fileStream;
@@ -128,11 +147,18 @@ typedef NS_ENUM(NSInteger, BTAudioPlayerStatus) {
   NSTimer                   *heartbeatTimer;
 }
 
+
+@property(nonatomic, assign) BTAudioPlayer *outsidePlayer;
+- (id)initWithURL:(NSURL *)URL;
+- (id)initWithPlayerItem:(BTPlayerItem *)item;
+
+//==================
 @property (nonatomic) BOOL paused;
 @property (readonly) BTAudioPlayerStatus status;
-
 - (id)initPlayerWithDelegate:(id<BTAudioPlayerDelegate>) aDelegate;
 - (id)initPlayerWithURL:(NSURL *)url delegate:(id<BTAudioPlayerDelegate>) aDelegate;
+
+
 
 - (void)play:(NSURL*)url;
 
@@ -185,3 +211,4 @@ typedef NS_ENUM(NSInteger, BTAudioPlayerStatus) {
 
 
 */
+

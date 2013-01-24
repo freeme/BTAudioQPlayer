@@ -4,6 +4,12 @@
 
 #import "BTAudioPlayerInternal.h"
 #import <dispatch/dispatch.h>
+#import "BTAudioRequest.h"
+#import "BTAudioFileStream.h"
+#import "BTAudioQueue.h"
+#import "BTPlayerItemInternal.h"
+#import "BTRunLoopSource.h"
+
 
 #define CMD_PLAY @"play"
 #define CMD_SEEK @"seek"
@@ -19,6 +25,7 @@
 @end
 
 @implementation BTAudioPlayerInternal
+@synthesize outsidePlayer = _outsidePlayer;
 @synthesize status = _playStatus;
 void RunLoopSourcePerformRoutine (void *info);
 void RunLoopSourcePlay (void *info);
@@ -66,6 +73,21 @@ void RunLoopSourceSeek (void *info) {
   _delegate = nil; 
   [_playerItem release];
 	[super dealloc];
+}
+
+- (id)initWithURL:(NSURL *)URL {
+  self = [super init];
+  if (self) {
+    _url = [URL retain];
+  }
+  return self;
+}
+- (id)initWithPlayerItem:(BTPlayerItem *)item {
+  self = [super init];
+  if (self) {
+    _currentItem = [item retain];
+  }
+  return self;
 }
 
 - (id)initPlayerWithDelegate:(id<BTAudioPlayerDelegate>) aDelegate {
@@ -685,3 +707,19 @@ void RunLoopSourceSeek (void *info) {
 #pragma mark -
 
 @end
+
+
+@interface BTAudioPlayer()
+
+@property (nonatomic) BTAudioPlayerStatus status;
+
+@end
+
+@implementation BTAudioPlayer
+
+- (void) setStatus:(BTAudioPlayerStatus)status {
+  
+}
+
+@end
+

@@ -7,6 +7,7 @@
 //
 
 #import "BTPlayingViewController.h"
+#import "BTAudioPlayer.h"
 #import "Music.h"
 
 static BTPlayingViewController *instance;
@@ -78,26 +79,26 @@ static BTPlayingViewController *instance;
 
 #pragma mark --
 - (void) playNewMusic {
-  [_player stop];
-  [_player release];
-  _player = nil;
-  _playProgressBar.value = 0.0;
-  _downloadProgressView.progress = 0.0;
-  _curTime.text = @"0";
-  _totalTime.text = @"0";
-  [self updateUIPauseMusic];
-  
-  Music *music = [_playList objectAtIndex:_playingIndex];
-  _musicTitle.text = music.title;
-  
-  /** load file from local filesystem
-  NSURL *url = [[NSBundle mainBundle] URLForResource:@"lpzd" withExtension:@"mp3"];
-  _player = [[BTAudioPlayer alloc] initPlayerWithURL:url delegate:self];
-  */
-  _player = [[BTAudioPlayerInternal alloc] initPlayerWithURL:[NSURL URLWithString:music.downloadLink ] delegate:self];
-
-  [_player start];
-  [self setUpdateTimer];
+//  [_player stop];
+//  [_player release];
+//  _player = nil;
+//  _playProgressBar.value = 0.0;
+//  _downloadProgressView.progress = 0.0;
+//  _curTime.text = @"0";
+//  _totalTime.text = @"0";
+//  [self updateUIPauseMusic];
+//  
+//  Music *music = [_playList objectAtIndex:_playingIndex];
+//  _musicTitle.text = music.title;
+//  
+//  /** load file from local filesystem
+//  NSURL *url = [[NSBundle mainBundle] URLForResource:@"lpzd" withExtension:@"mp3"];
+//  _player = [[BTAudioPlayer alloc] initPlayerWithURL:url delegate:self];
+//  */
+//  _player = [[BTAudioPlayer alloc] initWithURL:[NSURL URLWithString:music.downloadLink]];
+//
+//  [_player start];
+//  [self setUpdateTimer];
   
 //  [_player addObserver:self
 //            forKeyPath:@"status"
@@ -148,12 +149,12 @@ static BTPlayingViewController *instance;
 }
 
 - (IBAction) playAndPauseAction {
-  _player.paused = !_player.paused;
-  if (_player.paused) {
-    [self updateUIPauseMusic];
-  } else {
-    [self updateUIPlayingMusic];
-  }
+//  _player.paused = !_player.paused;
+//  if (_player.paused) {
+//    [self updateUIPauseMusic];
+//  } else {
+//    [self updateUIPlayingMusic];
+//  }
 }
 - (IBAction) fastForwardAction;{
   Float32 seekTime = _playProgressBar.value * [_player duration] + 5;
@@ -171,14 +172,14 @@ static BTPlayingViewController *instance;
 //    [_player release];
 //    CDLog(BTDFLAG_AUDIO_PLAYER, @"AFTER [_player release]");
 //    _player = nil;
-    if (_playingIndex + 1 < [_playList count]) {
-      _playingIndex ++;
-    } else {
-      _playingIndex = 0;
-    }
-    Music *music = [_playList objectAtIndex:_playingIndex];
-    _musicTitle.text = music.title;
-    [_player play:[NSURL URLWithString:music.downloadLink]];
+//    if (_playingIndex + 1 < [_playList count]) {
+//      _playingIndex ++;
+//    } else {
+//      _playingIndex = 0;
+//    }
+//    Music *music = [_playList objectAtIndex:_playingIndex];
+//    _musicTitle.text = music.title;
+//    [_player play:[NSURL URLWithString:music.downloadLink]];
   }
   
 }
@@ -257,8 +258,8 @@ static BTPlayingViewController *instance;
 //	if (streamer.bitRate != 0.0) {
   float progress = 0.0;
   float duration = 0.0;
-  progress = [_player playProgress];
-  duration = [_player duration];
+//  progress = [_player playProgress];
+//  duration = [_player duration];
 //
 //		if (duration > 0) {
   {

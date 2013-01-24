@@ -5,7 +5,7 @@
 #import "BTAudioFileStream.h"
 #import "AudioPlayerUtil.h"
 #import "BTDebug.h"
-#import "BTAudioPlayerInternal.h"
+//#import "BTAudioPlayerInternal.h"
 
 @implementation BTAudioFileStream
 
@@ -208,7 +208,7 @@ void packetCallback(void *clientData, UInt32 byteCount, UInt32 packetCount, cons
     }
   }
   if (size == 0) {
-    size = kAQDefaultBufSize;
+    //size = kAQDefaultBufSize;
   }
   return size;
 }

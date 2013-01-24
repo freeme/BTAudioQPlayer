@@ -7,9 +7,10 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "BTAudioPlayerInternal.h"
 
-@interface BTPlayingViewController : UIViewController<BTAudioPlayerDelegate> {
+@class BTAudioPlayer;
+
+@interface BTPlayingViewController : UIViewController {
   IBOutlet UIButton *_playAndPauseButton;
   IBOutlet UIButton *_fastForwardButton;
   IBOutlet UIButton *_backwardButton;
@@ -27,7 +28,7 @@
 
 	NSTimer *progressUpdateTimer;
   
-  BTAudioPlayerInternal *_player;
+  BTAudioPlayer *_player;
   
   NSObject *_obj;
 }

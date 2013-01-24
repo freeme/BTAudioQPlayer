@@ -9,9 +9,6 @@
 #import <Foundation/Foundation.h>
 #import <CoreMedia/CMTime.h>
 
-@class BTPlayerItem;
-@class BTPlayerItemInternal;
-
 /*
  使用状态变量的时候应该注意，避免各状态所表述的内容有交叉，比如AS_STOPPING和AS_PLAYING，AS_STOPPING也是种播放ing的状态。AS_STARTING_FILE_THREAD其实也是AS_WAITING_FOR_DATA
  这样的状态设置将导致后续难以维护
@@ -23,18 +20,24 @@
  waiting: 进入这个状态有很多原因。一个主要的原因就是等待数据。
  
  */
-typedef NS_ENUM(NSInteger, BTAudioPlayerStatus) {
+enum {
 	BTAudioPlayerStatusStop, //TODO: Or unknown
   BTAudioPlayerStatusReadyToPlay,
   BTAudioPlayerStatusWaiting,
   BTAudioPlayerStatusPlaying,
   BTAudioPlayerStatusPaused,
   BTAudioPlayerStatusFailed
-} ;
+};
+typedef NSInteger BTAudioPlayerStatus;
+
+@class BTPlayerItem;
+@class BTAudioPlayerInternal;
+
+
 
 @interface BTAudioPlayer : NSObject {
-  @private
-  BTPlayerItemInternal *_intenralPlayer;
+  //@private
+  BTAudioPlayerInternal *_intenralPlayer;
 }
 
 + (id)playerWithURL:(NSURL *)URL;
@@ -48,7 +51,7 @@ typedef NS_ENUM(NSInteger, BTAudioPlayerStatus) {
 @interface BTAudioPlayer (BTAudioPlayerPlaybackControl)
 
 /* indicates the current rate of playback; 0.0 means "stopped", 1.0 means "play at the natural rate of the current item" */
-@property (nonatomic) float rate;
+//@property (nonatomic) float rate;
 
 /*!
  @method			play
@@ -75,7 +78,7 @@ typedef NS_ENUM(NSInteger, BTAudioPlayerStatus) {
 - (void)playWithPlayerItem:(BTPlayerItem *)item;
 
 
-typedef NS_ENUM(NSInteger, BTPlayerActionAtItemEnd) {
+enum {
   BTPlayerActionAtItemEndPause    = 1U << 0,
   BTPlayerActionAtItemEndAdvance	= 1U << 1,
   BTPlayerActionAtItemEndRandom   = 1U << 2,
@@ -83,7 +86,7 @@ typedef NS_ENUM(NSInteger, BTPlayerActionAtItemEnd) {
   BTPlayerActionAtItemEndLoopOne  = BTPlayerActionAtItemEndLoop | BTPlayerActionAtItemEndPause,
   BTPlayerActionAtItemEndLoopAll  = BTPlayerActionAtItemEndLoop | BTPlayerActionAtItemEndAdvance,
 };
-
+typedef NSInteger BTPlayerActionAtItemEnd;
 
 /* indicates the action that the player should perform when playback of an item reaches its end time */
 @property (nonatomic) BTPlayerActionAtItemEnd actionAtItemEnd;
@@ -97,35 +100,10 @@ typedef NS_ENUM(NSInteger, BTPlayerActionAtItemEnd) {
 
 @end
 
-@interface BTAudioPlayer (BTAudioPlayerTimeObservation)
-
-/*!
- @method			addPeriodicTimeObserverForInterval:queue:usingBlock:
- @abstract		Requests invocation of a block during playback to report changing time.
- @param			interval
- The interval of invocation of the block during normal playback, according to progress of the current time of the player.
- @param			queue
- The serial queue onto which block should be enqueued.  If you pass NULL, the main queue (obtained using dispatch_get_main_queue()) will be used.  Passing a
- concurrent queue to this method will result in undefined behavior.
- @param			block
- The block to be invoked periodically.
- @result
- An object conforming to the NSObject protocol.  You must retain this returned value as long as you want the time observer to be invoked by the player.
- Pass this object to -removeTimeObserver: to cancel time observation.
- @discussion		The block is invoked periodically at the interval specified, interpreted according to the timeline of the current item.
- The block is also invoked whenever time jumps and whenever playback starts or stops.
- If the interval corresponds to a very short interval in real time, the player may invoke the block less frequently
- than requested. Even so, the player will invoke the block sufficiently often for the client to update indications
- of the current time appropriately in its end-user interface.
- Each call to -addPeriodicTimeObserverForInterval:queue:usingBlock: should be paired with a corresponding call to -removeTimeObserver:.
- Releasing the observer object without a call to -removeTimeObserver will result in undefined behavior.
- */
-- (id)addPeriodicTimeObserverForInterval:(CMTime)interval queue:(dispatch_queue_t)queue usingBlock:(void (^)(CMTime time))block;
-
-
-- (void)removeTimeObserver:(id)observer;
-
-@end
+//@interface BTAudioPlayer (BTAudioPlayerTimeObservation)
+//- (id)addPeriodicTimeObserverForInterval:(CMTime)interval queue:(dispatch_queue_t)queue usingBlock:(void (^)(CMTime time))block;
+//- (void)removeTimeObserver:(id)observer;
+//@end
 
 /**
 @class BTAudioPlayerInternal;
