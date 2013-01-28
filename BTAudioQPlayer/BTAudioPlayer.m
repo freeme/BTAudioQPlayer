@@ -86,7 +86,11 @@
 @implementation BTAudioPlayer (BTAudioPlayerItemControl)
 
 
-- (void)playWithPlayerItem:(BTPlayerItem *)item {
+- (void)replaceCurrentItemWithPlayerItem:(BTPlayerItem *)item {
+  
+}
+
+- (void)replaceCurrentItemWithURL:(NSURL*)url {
   
 }
 

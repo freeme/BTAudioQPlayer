@@ -42,6 +42,9 @@ typedef NSInteger BTAudioPlayerStatus;
 
 + (id)playerWithURL:(NSURL *)URL;
 + (id)playerWithPlayerItem:(BTPlayerItem *)item;
+/*
+ Implicitly creates an AVPlayerItem. Clients can obtain the AVPlayerItem as it becomes the player's currentItem.
+ */
 - (id)initWithURL:(NSURL *)URL;
 - (id)initWithPlayerItem:(BTPlayerItem *)item;
 @property (nonatomic, readonly) BTAudioPlayerStatus status;
@@ -73,11 +76,6 @@ typedef NSInteger BTAudioPlayerStatus;
 
 /* indicates the current item of the player */
 @property (nonatomic, readonly) BTPlayerItem *currentItem;
-
-
-- (void)playWithPlayerItem:(BTPlayerItem *)item;
-
-
 enum {
   BTPlayerActionAtItemEndPause    = 1U << 0,
   BTPlayerActionAtItemEndAdvance	= 1U << 1,
@@ -91,6 +89,19 @@ typedef NSInteger BTPlayerActionAtItemEnd;
 /* indicates the action that the player should perform when playback of an item reaches its end time */
 @property (nonatomic) BTPlayerActionAtItemEnd actionAtItemEnd;
 
+/*
+ 
+ Replaces the player item with a new player item.
+ You can only use this method with players created without queues. If the player was not initialized with a single item and no queue, the method throws an exception.
+ The item replacement occurs asynchronously; observe the currentItem property to find out when the replacement will/did occur.
+ The new item must have the same compositor as the item it replaces, or have no compositor.
+ */
+- (void)replaceCurrentItemWithPlayerItem:(BTPlayerItem *)item;
+
+/*
+ Implicitly creates an AVPlayerItem.
+ */
+- (void)replaceCurrentItemWithURL:(NSURL*)url;
 @end
 
 @interface BTAudioPlayer (BTAudioPlayerTimeControl)

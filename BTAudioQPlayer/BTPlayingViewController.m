@@ -9,6 +9,11 @@
 #import "BTPlayingViewController.h"
 #import "BTAudioPlayer.h"
 #import "Music.h"
+#import "BTPlayerItem.h"
+
+static void *AVAudioPlayerStatusObservationContext = &AVAudioPlayerStatusObservationContext;
+static void *AVAudioPlayerItemObservationContext = &AVAudioPlayerItemObservationContext;
+
 
 static BTPlayingViewController *instance;
 
@@ -37,11 +42,7 @@ static BTPlayingViewController *instance;
   if (self) {
     // Custom initialization
     _player = [[BTAudioPlayer alloc] init];
-    [_player addObserver:self
-            forKeyPath:@"status"
-               options:(NSKeyValueObservingOptionNew |
-                        NSKeyValueObservingOptionOld)
-               context:NULL];
+
   }
   return self;
 }
@@ -50,7 +51,8 @@ static BTPlayingViewController *instance;
 {
     [super viewDidLoad];
     // Do any additional setup after loading the view from its nib.
-    [_player setValue:[NSNumber numberWithInt:3] forKey:@"status"];
+
+  [self addObserver];
 }
 
 - (void)viewDidUnload
@@ -106,13 +108,20 @@ static BTPlayingViewController *instance;
 //
 //  [_player start];
 //  [self setUpdateTimer];
-  
-//  [_player addObserver:self
-//            forKeyPath:@"status"
-//               options:(NSKeyValueObservingOptionNew |
-//                        NSKeyValueObservingOptionOld)
-//               context:NULL];
 
+}
+
+- (void)addObserver {
+  [_player addObserver:self
+            forKeyPath:@"status"
+               options:(NSKeyValueObservingOptionNew |
+                        NSKeyValueObservingOptionInitial)
+               context:AVAudioPlayerStatusObservationContext];
+  [_player addObserver:self
+            forKeyPath:@"currentItem"
+               options:(NSKeyValueObservingOptionNew |
+                        NSKeyValueObservingOptionInitial)
+               context:AVAudioPlayerItemObservationContext];
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath
@@ -121,48 +130,43 @@ static BTPlayingViewController *instance;
                        context:(void *)context {
   DLog(@"keyPath = %@ . object = %@ . change = %@", keyPath,object,change);
   DLog(@"th:%d,_player.status = %d", [NSThread isMainThread],_player.status);
-//  if ([keyPath isEqual:@"status"]) {
-//    [openingBalanceInspectorField setObjectValue:
-//     [change objectForKey:NSKeyValueChangeNewKey]];
-//  }
-  /*
-   Be sure to call the superclass's implementation *if it implements it*.
-   NSObject does not implement the method.
-   */
-//  [super observeValueForKeyPath:keyPath
-//                       ofObject:object
-//                         change:change
-//                        context:context];
+  if (context == AVAudioPlayerStatusObservationContext) {
+    BTAudioPlayerStatus status = [[change objectForKey:NSKeyValueChangeNewKey] integerValue];
+    [self updateUIWithStatus:status];
+  } else if (context == AVAudioPlayerItemObservationContext) {
+    BTPlayerItem *newPlayerItem = [change objectForKey:NSKeyValueChangeNewKey];
+    
+    /* Is the new player item null? */
+    if (newPlayerItem == (id)[NSNull null]) {
+      
+    } else {
+      
+    }
+  } else {
+    [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+  }
 }
 - (void)setUpdateTimer {
+  if (progressUpdateTimer) {
+    [self clearTimer];
+  }
   progressUpdateTimer =
-  [NSTimer
-   scheduledTimerWithTimeInterval:0.1
-   target:self
-   selector:@selector(updateProgress:)
-   userInfo:nil
-   repeats:YES];
-  
-//  progressUpdateTimer = [[NSTimer alloc] initWithFireDate:[NSDate date] interval:1 target:self selector:@selector(updateProgress:) userInfo:nil repeats:YES];
-//  [[NSRunLoop currentRunLoop] addTimer:progressUpdateTimer forMode:NSDefaultRunLoopMode];
+  [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(updateProgress:) userInfo:nil repeats:YES];
 }
 
 - (void)clearTimer {
   if (progressUpdateTimer) {
     [progressUpdateTimer invalidate];
-    //[progressUpdateTimer release];
     progressUpdateTimer = nil;
   }
-
 }
 
 - (IBAction) playAndPauseAction {
-//  _player.paused = !_player.paused;
-//  if (_player.paused) {
-//    [self updateUIPauseMusic];
-//  } else {
-//    [self updateUIPlayingMusic];
-//  }
+  if (_player.status == BTAudioPlayerStatusPaused) {
+    [_player play];
+  } else {
+    [_player pause];
+  }
 }
 - (IBAction) fastForwardAction;{
   Float32 seekTime = _playProgressBar.value * [_player duration] + 5;
@@ -173,22 +177,15 @@ static BTPlayingViewController *instance;
   [_player seekToTime:seekTime];
 }
 - (IBAction) nextAction;{
-  
-  //Add for test
-  if (_player) {
-//    [_player stop];
-//    [_player release];
-//    CDLog(BTDFLAG_AUDIO_PLAYER, @"AFTER [_player release]");
-//    _player = nil;
-//    if (_playingIndex + 1 < [_playList count]) {
-//      _playingIndex ++;
-//    } else {
-//      _playingIndex = 0;
-//    }
-//    Music *music = [_playList objectAtIndex:_playingIndex];
-//    _musicTitle.text = music.title;
-//    [_player play:[NSURL URLWithString:music.downloadLink]];
+
+  if (_playingIndex + 1 < [_playList count]) {
+    _playingIndex ++;
+  } else {
+    _playingIndex = 0;
   }
+  Music *music = [_playList objectAtIndex:_playingIndex];
+  _musicTitle.text = music.title;
+  [_player replaceCurrentItemWithURL:[NSURL URLWithString:music.downloadLink]];
   
 }
 - (IBAction) previousAction;{
@@ -211,6 +208,22 @@ static BTPlayingViewController *instance;
   [self setUpdateTimer];
 }
 
+- (void)updateUIWithStatus:(BTAudioPlayerStatus) status{
+  if (status == BTAudioPlayerStatusStop) {
+    [self setPlayButtonsEnable:NO];
+  } else if (status == BTAudioPlayerStatusReadyToPlay) {
+    [self setPlayButtonsEnable:NO];
+  } else if (status == BTAudioPlayerStatusPlaying) {
+    [self updateUIPlayingMusic];
+  } else if (status == BTAudioPlayerStatusPaused) {
+    [self updateUIPauseMusic];
+  } else if (status == BTAudioPlayerStatusWaiting) {
+    [self updateUIWaitMusicToPlay];
+  } else { //BTAudioPlayerStatusFailed
+    NSError *error = _player.error;
+  }
+}
+
 - (void) updateUIPlayingMusic {
   [_waitView stopAnimating];
   [_playAndPauseButton setTitle:@"||" forState:UIControlStateNormal];
@@ -225,33 +238,16 @@ static BTPlayingViewController *instance;
   [_waitView startAnimating];
   [_playAndPauseButton setTitle:@"" forState:UIControlStateNormal];
 }
+
+- (void) setPlayButtonsEnable:(BOOL)enable {
+  _playAndPauseButton.enabled = enable;
+  _fastForwardButton.enabled = enable;
+  _nextButton.enabled = enable;
+  _previousButton.enabled = enable;
+  _backwardButton.enabled = enable;
+  _playProgressBar.enabled = enable;
+}
 #pragma mark -
-#pragma mark BTAudioPlayerDelegate
-
-/*
- * Notifies the delegate that the requested file was not playable.
- */
-- (void)audioPlayer:(BTAudioPlayerInternal *)audioPlayer failedWithError:(NSError*)error{
-  
-}
-
-/*
- * Notifies the delegate that playback of the requested file has begun.
- */
-- (void)audioPlayerStarted:(BTAudioPlayerInternal *)audioPlayer {
-  [self updateUIPlayingMusic];
-}
-
-- (void)audioPlayerWaiting:(BTAudioPlayerInternal *)audioPlayer {
-  [self updateUIWaitMusicToPlay];
-}
-
-/*
- * Notifies the delegate that playback of the request file is complete.
- */
-- (void)audioPlayerFinished:(BTAudioPlayerInternal *)audioPlayer {
-  [self updateUIPauseMusic];
-}
 
 - (void)audioPlayer:(BTAudioPlayerInternal *) audioPlayer downloadProgress:(float)progress{
 //  float p = [progress floatValue];
