@@ -11,6 +11,7 @@
 static CFTimeInterval kTimeoutInterval = 15;
 
 - (void)dealloc {
+  _delegate = nil;
   [self cancel];
 	[super dealloc];
 }
@@ -37,17 +38,24 @@ static CFTimeInterval kTimeoutInterval = 15;
 		NSHTTPURLResponse *response = (NSHTTPURLResponse *)aResponse;
 		if (response.statusCode == 200) {
        _contentLength = [response expectedContentLength];
-      CILog(BTDFLAG_NETWORK,@"_contentLength = %d", _contentLength);
+      CILog(BTDFLAG_NETWORK,@"_contentLength = %d MIMEType:%@", _contentLength,response.MIMEType);
       if (_contentLength > 0) {
-        [_delegate audioRequestDidConnectOK:self contentLength:_contentLength];
+        if ([response.MIMEType rangeOfString:@"audio"].location != NSNotFound) {
+          [_delegate audioRequestDidConnectOK:self contentLength:_contentLength];
+        } else {
+          NSDictionary *userInfo = [NSDictionary dictionaryWithObject:@"HTTP Response MIMEType Is Wrong" forKey:NSURLErrorFailingURLStringErrorKey];
+          NSError *error = [NSError errorWithDomain:NSURLErrorDomain code:response.statusCode userInfo:userInfo];
+          [self cancel];
+          [_delegate audioRequest:self didFailWithError:error];
+        }
+        
       } else {
         NSDictionary *userInfo = [NSDictionary dictionaryWithObject:@"HTTP Response Content Length = 0" forKey:NSURLErrorFailingURLStringErrorKey];
         NSError *error = [NSError errorWithDomain:NSURLErrorDomain code:response.statusCode userInfo:userInfo];
-        
-        [_delegate audioRequest:self didFailWithError:error];
         [self cancel];
+        [_delegate audioRequest:self didFailWithError:error];
       }
-      
+
 		} else {
       //CELog(BTDFLAG_NETWORK, @"statusCode = %d", response.statusCode);
       NSDictionary *userInfo = [NSDictionary dictionaryWithObject:[NSString stringWithFormat:@"HTTP Response status code:%d",response.statusCode] forKey:NSURLErrorFailingURLStringErrorKey];
@@ -60,7 +68,7 @@ static CFTimeInterval kTimeoutInterval = 15;
     }
 	} else { //Not a NSHTTPURLResponse 本地文件路径
     _contentLength = [aResponse expectedContentLength];
-    CILog(BTDFLAG_NETWORK,@"_contentLength = %d", _contentLength);
+    CILog(BTDFLAG_NETWORK,@"_contentLength = %d MIMEType:%@", _contentLength,aResponse.MIMEType);
     [_delegate audioRequestDidConnectOK:self contentLength:_contentLength];
   }
 }
@@ -80,10 +88,8 @@ static CFTimeInterval kTimeoutInterval = 15;
 }
 
 - (void)connection:(NSURLConnection *)aConnection didFailWithError:(NSError *)error {
-
 	[self cancel];
 	[_delegate audioRequest:self didFailWithError:error];
-  
 }
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection {
@@ -92,11 +98,11 @@ static CFTimeInterval kTimeoutInterval = 15;
 	[_delegate audioRequestDidFinish:self];
 }
 - (void)start {
-  [_connection start];
   [_delegate audioRequestDidStart:self];
+  [_connection start];
+
 }
 - (void)cancel {
-  _delegate = nil;
   if (_connection) {
     [_connection cancel];
     //[connection unscheduleFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];

@@ -151,7 +151,7 @@ typedef enum
 - (id)initWithPlayerItem:(BTPlayerItem *)item audioPlayer:(BTAudioPlayer*) audioPlayer;
 - (void)setURL:(NSURL*)url;
 - (void)play;
-- (void)pause;
+
 //==================
 @property (nonatomic) BOOL paused;
 @property (readonly) BTAudioPlayerStatus status;
@@ -170,6 +170,8 @@ typedef enum
 - (Float64)playProgress;
 
 - (Float64)duration;
+
+- (Float64)downloadProgress;
 
 - (void)seekToTime:(Float64)newSeekTime;
 //- (void)updateStatus:(BTAudioPlayerStatus)status;

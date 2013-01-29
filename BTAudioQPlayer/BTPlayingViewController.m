@@ -134,7 +134,6 @@ static BTPlayingViewController *instance;
                         change:(NSDictionary *)change
                        context:(void *)context {
   DLog(@"keyPath = %@ . object = %@ . change = %@", keyPath,object,change);
-  DLog(@"th:%d,_player.status = %d", [NSThread isMainThread],_player.status);
   if (context == AVAudioPlayerStatusObservationContext) {
     BTAudioPlayerStatus status = [[change objectForKey:NSKeyValueChangeNewKey] integerValue];
     [self updateUIWithStatus:status];
@@ -167,11 +166,7 @@ static BTPlayingViewController *instance;
 }
 
 - (IBAction) playAndPauseAction {
-  if (_player.status == BTAudioPlayerStatusPaused) {
-    [_player play];
-  } else {
-    [_player pause];
-  }
+  _player.paused = !_player.paused;
 }
 - (IBAction) fastForwardAction;{
   Float32 seekTime = _playProgressBar.value * [_player duration] + 5;
@@ -228,8 +223,10 @@ static BTPlayingViewController *instance;
 //    [self setPlayButtonsEnable:NO];
 //  }
     if (_player.error) {
-      CDLog(@"error = %@", _player.error);
+      CDLog(@"error = %@", [_player.error description]);
+    
     }
+    [self updateUIPauseMusic];
   } else if (status == BTAudioPlayerStatusPlaying) {
     [self updateUIPlayingMusic];
   } else if (status == BTAudioPlayerStatusPaused) {
@@ -265,13 +262,6 @@ static BTPlayingViewController *instance;
   _backwardButton.enabled = enable;
   _playProgressBar.enabled = enable;
 }
-#pragma mark -
-
-- (void)audioPlayer:(BTAudioPlayerInternal *) audioPlayer downloadProgress:(float)progress{
-//  float p = [progress floatValue];
-  CVLog(BTDFLAG_NETWORK,@"progress = %.4f", progress);
-  _downloadProgressView.progress = progress;
-}
 
 #pragma mark -
 
@@ -280,8 +270,10 @@ static BTPlayingViewController *instance;
 //	if (streamer.bitRate != 0.0) {
   float progress = 0.0;
   float duration = 0.0;
-//  progress = [_player playProgress];
-//  duration = [_player duration];
+  progress = [_player playProgress];
+  duration = [_player duration];
+  
+  _downloadProgressView.progress = [_player downloadProgress];
 //
 //		if (duration > 0) {
   {

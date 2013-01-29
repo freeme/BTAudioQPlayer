@@ -80,8 +80,13 @@
  @abstract		Pauses playback.
  @discussion		Same as setting rate to 0.0.
  */
-- (void)pause {
-  [_intenralPlayer pause];
+- (BOOL)paused {
+  NSAssert([NSThread isMainThread],nil);
+	return _intenralPlayer.paused;
+}
+
+- (void)setPaused:(BOOL)paused {
+  _intenralPlayer.paused = paused;
 }
 
 @end
@@ -109,4 +114,24 @@
   return nil;
 }
 
+@end
+
+@implementation BTAudioPlayer (BTAudioPlayerTimeControl)
+
+- (Float64)currentTime {
+  return 0;
+}
+- (void)seekToTime:(Float64)time {
+  
+}
+- (Float64)playProgress {
+  return [_intenralPlayer playProgress];
+}
+- (Float64)duration {
+  return [_intenralPlayer duration];
+}
+
+- (Float64)downloadProgress {
+  return [_intenralPlayer downloadProgress];
+}
 @end

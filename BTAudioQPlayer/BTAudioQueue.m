@@ -53,7 +53,7 @@ void audioQueueOutputCallback (void *inUserData, AudioQueueRef inAQ, AudioQueueB
     [_condition lock];
     _inuse[bufIndex] = NO;
     _bufCountInQueue--;
-    CDLog(BTDFLAG_AUDIO_QUEUE,@"_bufCountInQueue-- = %d bufIndex:%d", _bufCountInQueue, bufIndex);
+    CVLog(BTDFLAG_AUDIO_QUEUE,@"_bufCountInQueue-- = %d bufIndex:%d", _bufCountInQueue, bufIndex);
     [_condition broadcast];
     [_condition unlock];
   }
@@ -392,12 +392,12 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
     status = AudioQueueEnqueueBuffer(_audioQueue, filledBuffer, 0, NULL);
   }
   //status = -66686 = kAudioQueueErr_BufferEmpty, bufferDidEmpty没有回调
-  if (filledBuffer->mAudioDataByteSize == 0) {
+  if (status!=noErr) {
     [self failWithError:BTAudioQueueErrorEnqueueBuffer status:status];
     return;
   }
   _inuse[_currentFillBufferIndex] = YES;
-  CDLog(BTDFLAG_AUDIO_QUEUE,@"enqueueBuffer _currentFillBufferIndex: = %d", _currentFillBufferIndex);
+  CVLog(BTDFLAG_AUDIO_QUEUE,@"enqueueBuffer _currentFillBufferIndex: = %d", _currentFillBufferIndex);
   [self moveToNextEmptyBuffer];
   _bufCountInQueue++;
 
@@ -424,10 +424,10 @@ void propertyChangeIsRunning(void *data, AudioQueueRef inAQ, AudioQueuePropertyI
     if (self.status == BTAudioQueueStatusStopping ||self.status == BTAudioQueueStatusStopped || self.status == BTAudioQueueStatusPaused) {
       break;
     }
-    CDLog(BTDFLAG_AUDIO_QUEUE,@"[_condition       wait: %d",_currentFillBufferIndex);
+    CVLog(BTDFLAG_AUDIO_QUEUE,@"[_condition       wait: %d",_currentFillBufferIndex);
     [_condition wait];
   }
-  CDLog(BTDFLAG_AUDIO_QUEUE,@"[_condition after wait: %d",_currentFillBufferIndex);
+  CVLog(BTDFLAG_AUDIO_QUEUE,@"[_condition after wait: %d",_currentFillBufferIndex);
   [_condition unlock];
 }
 

@@ -53,22 +53,10 @@ typedef NSInteger BTAudioPlayerStatus;
 
 @interface BTAudioPlayer (BTAudioPlayerPlaybackControl)
 
-/* indicates the current rate of playback; 0.0 means "stopped", 1.0 means "play at the natural rate of the current item" */
-//@property (nonatomic) float rate;
-
-/*!
- @method			play
- @abstract		Begins playback of the current item.
- @discussion		Same as setting rate to 1.0.
- */
+// Play current item
 - (void)play;
 
-/*!
- @method			pause
- @abstract		Pauses playback.
- @discussion		Same as setting rate to 0.0.
- */
-- (void)pause;
+@property(nonatomic) BOOL paused;
 
 @end
 
@@ -108,7 +96,9 @@ typedef NSInteger BTPlayerActionAtItemEnd;
 
 - (Float64)currentTime;
 - (void)seekToTime:(Float64)time;
-
+- (Float64)playProgress;
+- (Float64)duration;
+- (Float64)downloadProgress;
 @end
 
 //@interface BTAudioPlayer (BTAudioPlayerTimeObservation)

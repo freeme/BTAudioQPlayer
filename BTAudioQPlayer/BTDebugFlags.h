@@ -14,9 +14,9 @@
 
 #ifndef __BTDEBUGFLAGS_H__
 #define __BTDEBUGFLAGS_H__
-#define BTDFLAG_DEFAULT         0
+#define BTDFLAG_DEFAULT         1
 #define BTDFLAG_AUDIO_QUEUE     1
-#define BTDFLAG_NETWORK         0
+#define BTDFLAG_NETWORK         1
 #define BTDFLAG_FILE_STREAM     0
 #define BTDFLAG_RUNLOOP         0
 #define BTDFLAG_AUDIO_PLAYER    1
