@@ -108,7 +108,12 @@ static BTPlayingViewController *instance;
 //
 //  [_player start];
 //  [self setUpdateTimer];
-
+  
+  Music *music = [_playList objectAtIndex:_playingIndex];
+  _musicTitle.text = music.title;
+  [_player replaceCurrentItemWithURL:[NSURL URLWithString:music.downloadLink]];
+  [_player play];
+  [self setUpdateTimer];
 }
 
 - (void)addObserver {
@@ -186,10 +191,18 @@ static BTPlayingViewController *instance;
   Music *music = [_playList objectAtIndex:_playingIndex];
   _musicTitle.text = music.title;
   [_player replaceCurrentItemWithURL:[NSURL URLWithString:music.downloadLink]];
-  
+  [_player play];
 }
 - (IBAction) previousAction;{
-
+  if (_playingIndex - 1 >= 0) {
+    _playingIndex --;
+  } else {
+    _playingIndex = [_playList count] - 1;
+  }
+  Music *music = [_playList objectAtIndex:_playingIndex];
+  _musicTitle.text = music.title;
+  [_player replaceCurrentItemWithURL:[NSURL URLWithString:music.downloadLink]];
+  [_player play];
 }
 - (IBAction) progressWillChangedAction;{
   [self clearTimer];
@@ -210,9 +223,13 @@ static BTPlayingViewController *instance;
 
 - (void)updateUIWithStatus:(BTAudioPlayerStatus) status{
   if (status == BTAudioPlayerStatusStop) {
-    [self setPlayButtonsEnable:NO];
-  } else if (status == BTAudioPlayerStatusReadyToPlay) {
-    [self setPlayButtonsEnable:NO];
+    //[self setPlayButtonsEnable:NO];
+//  } else if (status == BTAudioPlayerStatusReadyToPlay) {
+//    [self setPlayButtonsEnable:NO];
+//  }
+    if (_player.error) {
+      CDLog(@"error = %@", _player.error);
+    }
   } else if (status == BTAudioPlayerStatusPlaying) {
     [self updateUIPlayingMusic];
   } else if (status == BTAudioPlayerStatusPaused) {
@@ -220,7 +237,8 @@ static BTPlayingViewController *instance;
   } else if (status == BTAudioPlayerStatusWaiting) {
     [self updateUIWaitMusicToPlay];
   } else { //BTAudioPlayerStatusFailed
-    NSError *error = _player.error;
+    //TODO: error
+    
   }
 }
 

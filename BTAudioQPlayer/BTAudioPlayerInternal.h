@@ -155,6 +155,7 @@ typedef enum
 //==================
 @property (nonatomic) BOOL paused;
 @property (readonly) BTAudioPlayerStatus status;
+@property (nonatomic, retain) NSError *error;
 - (id)initPlayerWithDelegate:(id<BTAudioPlayerDelegate>) aDelegate;
 - (id)initPlayerWithURL:(NSURL *)url delegate:(id<BTAudioPlayerDelegate>) aDelegate;
 

@@ -22,11 +22,11 @@
  */
 enum {
 	BTAudioPlayerStatusStop, //TODO: Or unknown
-  BTAudioPlayerStatusReadyToPlay,
+  //BTAudioPlayerStatusReadyToPlay,
   BTAudioPlayerStatusWaiting,
   BTAudioPlayerStatusPlaying,
   BTAudioPlayerStatusPaused,
-  BTAudioPlayerStatusFailed
+  //BTAudioPlayerStatusFailed
 };
 typedef NSInteger BTAudioPlayerStatus;
 

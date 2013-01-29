@@ -25,7 +25,17 @@ typedef NS_ENUM(NSInteger, BTAudioQueueStatus) {
   //BTAudioQueueStatusReseted,
   BTAudioQueueStatusPaused,
   BTAudioQueueStatusStopping, //这个时候Queue中还有Buffer没有播放完
-} ;
+};
+FOUNDATION_EXPORT NSString *const BTAudioQueueErrorDomain;
+typedef NS_ENUM(NSInteger, BTAudioQueueErrorCode) {
+	BTAudioQueueErrorIsRunning,
+  BTAudioQueueErrorInitQueue, 
+  BTAudioQueueErrorInitBuffer, 
+  BTAudioQueueErrorStart,
+  BTAudioQueueErrorEnqueueBuffer,
+  BTAudioQueueErrorBufferTooSmall,
+  BTAudioQueueErrorBufferMisMatch
+};
 
 @protocol BTAudioQueueDelegate;
 @interface BTAudioQueue : NSObject {
@@ -110,5 +120,5 @@ typedef NS_ENUM(NSInteger, BTAudioQueueStatus) {
 - (void)audioQueuePlaybackIsComplete:(BTAudioQueue *)audioQueue;
 
 - (void)audioQueueIsFull:(BTAudioQueue *)audioQueue;
-
+- (void)audioQueue:(BTAudioQueue *)audioQueue didError:(BTAudioQueueErrorCode)errorCode status:(OSStatus)osStatus;
 @end

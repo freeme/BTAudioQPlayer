@@ -14,7 +14,7 @@
 @synthesize status;
 
 - (void) dealloc {
-  
+  [_intenralPlayer stop];
   [_intenralPlayer release];
   [super dealloc];
 }
@@ -32,6 +32,7 @@
   self = [super init];
   if (self) {
     _intenralPlayer = [[BTAudioPlayerInternal alloc] initWithAudioPlayer:self];
+    [_intenralPlayer start];
   }
   return self;
 }
@@ -40,6 +41,7 @@
   self = [super init];
   if (self) {
     _intenralPlayer = [[BTAudioPlayerInternal alloc] initWithURL:URL audioPlayer:self];
+    [_intenralPlayer start];
   }
   return self;
 }
@@ -47,6 +49,7 @@
   self = [super init];
   if (self) {
     _intenralPlayer = [[BTAudioPlayerInternal alloc] initWithPlayerItem:item audioPlayer:self];
+    [_intenralPlayer start];
   }
   return self;
 }
@@ -56,7 +59,7 @@
 //}
 
 - (NSError*)error {
-  return nil;
+  return _intenralPlayer.error;
 }
 
 @end
@@ -69,7 +72,7 @@
  @discussion		Same as setting rate to 1.0.
  */
 - (void)play {
-  
+  [_intenralPlayer play];
 }
 
 /*!
@@ -78,7 +81,7 @@
  @discussion		Same as setting rate to 0.0.
  */
 - (void)pause {
-  
+  [_intenralPlayer pause];
 }
 
 @end
@@ -91,7 +94,7 @@
 }
 
 - (void)replaceCurrentItemWithURL:(NSURL*)url {
-  
+  [_intenralPlayer setURL:url];
 }
 
 - (void)setActionAtItemEnd:(BTPlayerActionAtItemEnd)actionAtItemEnd {
