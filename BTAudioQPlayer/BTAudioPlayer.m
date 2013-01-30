@@ -118,14 +118,11 @@
 
 @implementation BTAudioPlayer (BTAudioPlayerTimeControl)
 
-- (Float64)currentTime {
-  return 0;
-}
 - (void)seekToTime:(Float64)time {
-  
+  [_intenralPlayer seekToTime:time];
 }
-- (Float64)playProgress {
-  return [_intenralPlayer playProgress];
+- (Float64)currentTime {
+  return [_intenralPlayer currentTime];
 }
 - (Float64)duration {
   return [_intenralPlayer duration];

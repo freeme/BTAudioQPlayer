@@ -268,17 +268,17 @@ static BTPlayingViewController *instance;
 - (void)updateProgress:(NSTimer *)updatedTimer
 {
 //	if (streamer.bitRate != 0.0) {
-  float progress = 0.0;
+  float currentTime = 0.0;
   float duration = 0.0;
-  progress = [_player playProgress];
+  currentTime = [_player currentTime];
   duration = [_player duration];
   
   _downloadProgressView.progress = [_player downloadProgress];
 //
 //		if (duration > 0) {
   {
-    int minute = progress / 60;
-    int second = (int)progress % 60;
+    int minute = currentTime / 60;
+    int second = (int)currentTime % 60;
     _curTime.text = [NSString stringWithFormat:@"%d:%.2d",minute,second];
   }
   {
@@ -288,7 +288,7 @@ static BTPlayingViewController *instance;
   }
   if (duration) {
     [_playProgressBar setEnabled:YES];
-    [_playProgressBar setValue:progress / duration];
+    [_playProgressBar setValue:currentTime / duration];
   } else {
     //[_playProgressBar setEnabled:NO];
   }

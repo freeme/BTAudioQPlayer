@@ -52,6 +52,7 @@ Finish！（NSURLConnection本身就支持）支持网络和本地数据
 Finish！处理正常播放结束  
 Finish!添加使用BTPlayerItem协议的对象  
 将播放器的状态，移到BTPlayerItem对象上。
+//TODO: 尝试解决拖动回弹的问题，没好用。
 支持CBR格式  
 统一数据类型的使用  
 正常播放结束，点击播放还可以继续播放  

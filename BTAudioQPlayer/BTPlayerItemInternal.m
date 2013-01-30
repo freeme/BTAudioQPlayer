@@ -7,6 +7,7 @@
 //
 
 #import "BTPlayerItemInternal.h"
+#import "BTAudioPlayerInternal.h"
 
 @implementation BTPlayerItemInternal
 @synthesize cacheData = _cacheData;
@@ -122,5 +123,17 @@
   self.byteWriteIndex = 0;
 //  self.processedPacketsSizeTotal = 0;
 //  self.processedPacketsCount = 0;
+}
+
+- (NSData*)readData {
+  NSData *readData = nil;
+  NSUInteger availableDataLength = [_cacheData length] - self.byteWriteIndex;
+  if (availableDataLength > 0) {
+    //TODO: 16*kAQDefaultBufSize 可以使queue达到Full的状态
+    NSUInteger readLength = ((availableDataLength >= 16*kAQDefaultBufSize) ? 16*kAQDefaultBufSize : availableDataLength);
+    readData = [NSData dataWithBytes:(_cacheData.mutableBytes + self.byteWriteIndex) length:readLength];
+    self.byteWriteIndex += readLength;
+  }
+  return readData;
 }
 @end

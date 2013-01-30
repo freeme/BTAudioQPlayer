@@ -41,8 +41,8 @@
 @property (nonatomic) NSUInteger  bitRate;
 
 @property (nonatomic) volatile NSUInteger  seekByteOffset;
-@property (nonatomic) Float64     seekTime;
-@property (nonatomic) Float64     playProgress;
+@property (nonatomic) volatile Float64     seekTime;
+@property (nonatomic) volatile Float64     currentTime;
 @property (nonatomic) Float64     downloadProgress;
 @property (nonatomic, readonly) Float64     packetDuration;
 @property (nonatomic, readonly) Float64     sampleRate;
@@ -61,4 +61,6 @@
 - (Float64)duration;
 - (Float64)calculatedBitRate;
 - (void)reset;
+-(NSData*) readData;
+
 @end

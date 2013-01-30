@@ -77,6 +77,7 @@ typedef NS_ENUM(NSInteger, BTAudioQueueErrorCode) {
 //Bind & unbind需要成对出现，unbind后，再start需要先bind
 - (void)bind;
 - (OSStatus)unbind;
+- (BOOL)isBound;
 - (OSStatus)start;
 - (OSStatus)pause;
 - (OSStatus)endOfStream;

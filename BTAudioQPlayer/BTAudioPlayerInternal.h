@@ -144,7 +144,7 @@ typedef enum
 //  double                              seekTime;
 //	BOOL                                seekWasRequested;
 	Float64                              requestedSeekTime;
-  NSTimer                   *heartbeatTimer;
+  NSTimer                   *_heartbeatTimer;
 }
 - (id)initWithAudioPlayer:(BTAudioPlayer*) audioPlayer;
 - (id)initWithURL:(NSURL *)URL audioPlayer:(BTAudioPlayer*) audioPlayer;
@@ -167,7 +167,7 @@ typedef enum
 
 - (void)stop;
 
-- (Float64)playProgress;
+- (Float64)currentTime;
 
 - (Float64)duration;
 

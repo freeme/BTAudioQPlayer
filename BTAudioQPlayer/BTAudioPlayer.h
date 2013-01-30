@@ -96,7 +96,7 @@ typedef NSInteger BTPlayerActionAtItemEnd;
 
 - (Float64)currentTime;
 - (void)seekToTime:(Float64)time;
-- (Float64)playProgress;
+- (Float64)currentTime;
 - (Float64)duration;
 - (Float64)downloadProgress;
 @end
