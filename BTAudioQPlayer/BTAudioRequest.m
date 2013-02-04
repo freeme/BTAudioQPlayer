@@ -55,7 +55,6 @@ static CFTimeInterval kTimeoutInterval = 15;
 
 - (void)checkResponseContent:(NSURLResponse *)response {
   _contentLength = [response expectedContentLength];
-  CILog(BTDFLAG_NETWORK,@"_contentLength = %d MIMEType:%@", _contentLength,response.MIMEType);
   if (_contentLength > 0) {
     if ([response.MIMEType rangeOfString:@"audio"].location != NSNotFound) {
       [_delegate audioRequestDidConnectOK:self contentLength:_contentLength];

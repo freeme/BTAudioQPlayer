@@ -4,7 +4,7 @@
 
 #import <Foundation/Foundation.h>
 #import <AudioToolbox/AudioToolbox.h>
-#define kNumAQBufs 16			// Number of audio queue buffers we allocate.
+#define kNumAQBufs 3 		// Number of audio queue buffers we allocate.
 // Needs to be big enough to keep audio pipeline
 // busy (non-zero number of queued buffers) but
 // not so big that audio takes too long to begin
@@ -44,6 +44,8 @@ typedef NS_ENUM(NSInteger, BTAudioQueueErrorCode) {
 	id<BTAudioQueueDelegate>  _delegate;
 
   AudioQueueBufferRef       _buffers[kNumAQBufs];
+  NSMutableArray            *_emptyBuffers;
+  NSMutableArray            *_usedBuffers;
   BOOL                      _inuse[kNumAQBufs];
   NSUInteger                _packetBufferSize;
   

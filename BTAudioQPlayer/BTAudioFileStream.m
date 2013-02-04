@@ -148,7 +148,6 @@ void packetCallback(void *clientData, UInt32 byteCount, UInt32 packetCount, cons
 
 - (void)propertyDidChange:(AudioFileStreamPropertyID)property {
   char *s = (char *)&property;
-  CDLog(BTDFLAG_FILE_STREAM, @"property = %c%c%c%c",s[3],s[2],s[1],s[0]);
 	if (_callbackStatus != noErr) {
 		// We had a previous error during the current parse.  We should
 		// stop processing this parse.
