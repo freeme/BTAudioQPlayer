@@ -8,8 +8,6 @@
 
 #import "BTRunLoopSource.h"
 
-
-
 @implementation BTRunLoopSource
 @synthesize delegate = _delegate;
 
@@ -36,9 +34,9 @@ void BTRunLoopSourceCancelRoutine (void *info, CFRunLoopRef rl, CFStringRef mode
 }
 
 - (void) addCommand:(NSString*)command {
-  //if (![_commands containsObject:command]) {
+  if (![_commands containsObject:command]) {
     [_commands addObject:command];
-  //}
+  }
 }
 - (void) sourceFired {
   if ([_commands count] > 0) {

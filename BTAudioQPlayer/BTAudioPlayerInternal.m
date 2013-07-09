@@ -133,10 +133,11 @@ void RunLoopSourceSeek (void *info) {
 //    [self setPaused:NO];
 //  } else {
 //    if (self.status == BTAudioPlayerStatusStop) {
-      [_btRunLoopSource addCommand:CMD_PLAY];
-      [_btRunLoopSource fireAllCommands];
+//      [_btRunLoopSource addCommand:CMD_PLAY];
+//      [_btRunLoopSource fireAllCommands];
 //    }
 //  }
+  [self performSelector:@selector(_playInternal) onThread:_thread withObject:nil waitUntilDone:NO];
 }
 //- (void)pause {
 //  [self setPaused:YES];
@@ -149,6 +150,7 @@ void RunLoopSourceSeek (void *info) {
 
 - (void)setPaused:(BOOL)paused {
   NSAssert([NSThread isMainThread],nil);
+  CDLog(BTDFLAG_AUDIO_FLOW, @"--S--");
   if (self.error) {
     return;
   }
@@ -157,11 +159,34 @@ void RunLoopSourceSeek (void *info) {
 	}
   
 	if (paused) {
-    [self performSelector:@selector(pausePlayer) onThread:_thread withObject:nil waitUntilDone:YES];
+//    [_audioQueue pause];
+//    self.status = BTAudioPlayerStatusPaused;
+    //[self performSelector:@selector(pausePlayer) onThread:_thread withObject:nil waitUntilDone:NO];
+    [self performSelectorOnInternalThread:@selector(pausePlayer) withObject:nil];
 	} else {
-    
-    [self performSelector:@selector(startPlayer) onThread:_thread withObject:nil waitUntilDone:YES];
+    [self performSelectorOnInternalThread:@selector(startPlayer) withObject:nil];
+    //[self performSelector:@selector(startPlayer) onThread:_thread withObject:nil waitUntilDone:NO];
 	}
+  CDLog(BTDFLAG_AUDIO_FLOW, @"--E--");
+}
+
+- (void) performSelectorOnInternalThread:(SEL)selector withObject:(id)arg {
+  NSDictionary *dict = nil;
+  if (arg) {
+    dict = [NSDictionary dictionaryWithObjectsAndKeys:NSStringFromSelector(selector),arg,@"SEL",@"OBJ", nil];
+  } else {
+    dict = [NSDictionary dictionaryWithObjectsAndKeys:NSStringFromSelector(selector),@"SEL", nil];
+  }
+  
+  [self performSelector:@selector(runOnInternalThread:) onThread:_thread withObject:dict waitUntilDone:NO];
+}
+
+- (void) runOnInternalThread:(id)arg  {
+  [NSObject cancelPreviousPerformRequestsWithTarget:self];
+  NSDictionary *dict = (NSDictionary*)arg;
+  SEL selector = NSSelectorFromString([dict objectForKey:@"SEL"]);
+  id object = [dict objectForKey:@"OBJ"];
+  [self performSelector:selector withObject:object afterDelay:0.1];
 }
 
 
@@ -203,8 +228,10 @@ void RunLoopSourceSeek (void *info) {
 
 - (void)pausePlayer {
   NSAssert([[NSThread currentThread].name isEqualToString:@"INTH"],nil);
+  CDLog(BTDFLAG_AUDIO_FLOW, @"--S--");
   [_audioQueue pause];
   self.status = BTAudioPlayerStatusPaused;
+  CDLog(BTDFLAG_AUDIO_FLOW, @"--E--");
 }
 
 - (void)stopPlayer {
@@ -294,17 +321,21 @@ void RunLoopSourceSeek (void *info) {
   
   while (_thread && ![_thread isCancelled]) {
 
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+    
     @try {
       //CDLog(BTDFLAG_AUDIO_PLAYER, @"Before CFRunLoopRun %d %d",[_thread isCancelled],_thread);
-      CFRunLoopRun();
+
+      NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+      //CFRunLoopRunInMode(kCFRunLoopDefaultMode, 1.0e10, true);
+            CFRunLoopRun();
+      [pool drain];
       //CDLog(BTDFLAG_AUDIO_PLAYER, @"AFter CFRunLoopRun %d %d", [_thread isCancelled],_thread);
     }@catch (NSException *exception) {
       DLog(@"exception:%@", exception);
     }@finally {
       
     }
-    [pool drain];
+    
   }
   DLog(@"Thread Exit!------");
 }
@@ -334,6 +365,8 @@ void RunLoopSourceSeek (void *info) {
   [_btRunLoopSource addCommand:CMD_SEEK];
   [_btRunLoopSource fireAllCommands];
   CDLog(BTDFLAG_AUDIO_FLOW, @"--E--");
+  //[self performSelector:@selector(_seekInternal) onThread:_thread withObject:nil waitUntilDone:NO];
+  //[self performSelectorOnInternalThread:@selector(_seekInternal) withObject:nil];
 }
 
 //TODO: make it more simple
